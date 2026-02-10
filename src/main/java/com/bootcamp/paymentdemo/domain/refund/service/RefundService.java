@@ -42,6 +42,7 @@ public class RefundService {
         // 환불 기록 및 상태 변경
         Refund refund = Refund.register(payment, payment.getPriceSnap(), RefundStatus.REFUNDED, "웹훅 취소");
         refundRepository.save(refund);
+
         payment.updateStatus(PaymentStatus.REFUNDED);
         order.updateStatus(OrderStatus.REFUNDED);
 
@@ -52,16 +53,7 @@ public class RefundService {
         updateMemberGrade(member);
 
         // 포인트 복구
-        if (order.getUsedPoints() > 0) {
-            member.addPoint(order.getUsedPoints());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
-        }
-
-        // 적립 취소
-        if (order.getEarnedPoints() > 0) {
-            member.minusPoint(order.getEarnedPoints());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getEarnedPoints(), MemberPointLogStatus.CANCEL_EARN, member));
-        }
+        handlePointRefund(member, order);
     }
 
     private void validateRefundAvailability(Payment payment) {
@@ -74,20 +66,22 @@ public class RefundService {
         }
     }
 
-    private void updateMemberGrade(Member member) {
-        Integer totalAmount = member.getTotalPriceAmount();
-        Grade newGrade;
+    public void updateMemberGrade(Member member) {
+        Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
+        member.updateGrade(newGrade);
+    }
 
-        if (totalAmount >= 300000) {
-            newGrade = Grade.DIAMOND;
-        } else if (totalAmount >= 200000) {
-            newGrade = Grade.GOLD;
-        } else if (totalAmount >= 100000) {
-            newGrade = Grade.SILVER;
-        } else {
-            newGrade = Grade.BRONZE;
+    private void handlePointRefund(Member member, Order order) {
+        // 포인트 복구
+        if (order.getUsedPoints() > 0) {
+            member.addPoint(order.getUsedPoints());
+            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
         }
 
-        member.updateGrade(newGrade);
+        // 적립 취소
+        if (order.getEarnedPoints() > 0) {
+            member.minusPoint(order.getEarnedPoints());
+            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getEarnedPoints(), MemberPointLogStatus.CANCEL_EARN, member));
+        }
     }
 }
