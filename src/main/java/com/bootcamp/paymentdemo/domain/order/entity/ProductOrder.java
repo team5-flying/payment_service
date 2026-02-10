@@ -4,6 +4,7 @@ package com.bootcamp.paymentdemo.domain.order.entity;
 import com.bootcamp.paymentdemo.common.entity.Base;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,10 +24,10 @@ public class ProductOrder extends Base {
     private String nameSnap;
 
     @Column(nullable = false)
-    private Long priceSnap;
+    private Integer priceSnap;
 
     @Column(nullable = false)
-    private Long quantity;
+    private Integer quantity;
 
     @Column(nullable = false)
     private boolean deleted;
@@ -45,8 +46,8 @@ public class ProductOrder extends Base {
             Product product,
             Order order,
             String nameSnap,
-            Long priceSnap,
-            Long quantity
+            Integer priceSnap,
+            Integer quantity
     ) {
         ProductOrder productOrder = new ProductOrder();
 

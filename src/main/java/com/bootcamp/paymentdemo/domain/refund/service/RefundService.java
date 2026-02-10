@@ -46,21 +46,21 @@ public class RefundService {
         order.updateStatus(OrderStatus.REFUNDED);
 
         // 누적 결제 금액 차감
-        member.subtractTotalPriceAmount(order.getPrice());
+        member.subtractTotalPriceAmount(order.getFinalAmount());
 
         // 등급 재계산 호출
         updateMemberGrade(member);
 
         // 포인트 복구
-        if (order.getUsePoint() > 0) {
-            member.addPoint(order.getUsePoint());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNo(), order.getUsePoint(), MemberPointLogStatus.RECOVER, member));
+        if (order.getUsedPoints() > 0) {
+            member.addPoint(order.getUsedPoints());
+            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
         }
 
         // 적립 취소
-        if (order.getSavePoint() > 0) {
-            member.minusPoint(order.getSavePoint());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNo(), order.getSavePoint(), MemberPointLogStatus.CANCEL_EARN, member));
+        if (order.getEarnedPoints() > 0) {
+            member.minusPoint(order.getEarnedPoints());
+            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getEarnedPoints(), MemberPointLogStatus.CANCEL_EARN, member));
         }
     }
 
