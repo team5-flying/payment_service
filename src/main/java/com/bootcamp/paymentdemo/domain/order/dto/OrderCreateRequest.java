@@ -12,7 +12,7 @@ public class OrderCreateRequest {
     private Integer totalAmount;
     private Integer usedPoints;
     private Integer finalAmount;
-    private Integer EarnedPoints;
+    private Integer earnedPoints;
     private Integer quantity;
     private String currency;
 

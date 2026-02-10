@@ -1,7 +1,6 @@
 package com.bootcamp.paymentdemo.domain.order.dto;
 
 import com.bootcamp.paymentdemo.common.entity.Base;
-import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import lombok.AccessLevel;
 import lombok.Getter;

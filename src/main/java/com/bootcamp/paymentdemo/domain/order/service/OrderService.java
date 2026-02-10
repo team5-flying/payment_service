@@ -15,11 +15,9 @@ import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.cache.spi.support.AbstractReadWriteAccess;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,10 +33,6 @@ public class OrderService {
     // 구현 : 주문 생성, 목록 조회, 단건 조회
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
-
-        // TODO 테스트용, 삭제 필요
-        Long memberId = 0L;
-
         Member member = memberRepository.findById(request.getMemberId()).orElseThrow(
             () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
@@ -83,7 +77,8 @@ public class OrderService {
         productOrderRepository.saveAll(items);
 
         return OrderCreateResponse.register(
-                savedOrder.getOrderId()
+                savedOrder.getMember().getMemberId()
+                , savedOrder.getOrderId()
                 , savedOrder.getTotalAmount()
                 , savedOrder.getOrderNumber()
         );

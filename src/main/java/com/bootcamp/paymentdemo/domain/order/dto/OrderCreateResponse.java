@@ -8,25 +8,29 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderCreateResponse {
 
+    private Long memberId;
     private Long orderId;
     private Integer totalAmount;
     private String orderNumber;
 
     private OrderCreateResponse(
+            Long memberId,
             Long orderId,
             Integer totalAmount,
             String orderNumber
     ) {
+        this.memberId = memberId;
         this.orderId = orderId;
         this.totalAmount = totalAmount;
         this.orderNumber = orderNumber;
     }
 
     public static OrderCreateResponse register(
+            Long memberId,
             Long orderId,
             Integer totalAmount,
             String orderNumber
     ) {
-        return new OrderCreateResponse(orderId, totalAmount, orderNumber);
+        return new OrderCreateResponse(memberId, orderId, totalAmount, orderNumber);
     }
 }
