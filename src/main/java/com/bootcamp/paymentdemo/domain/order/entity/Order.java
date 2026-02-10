@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -24,19 +26,25 @@ public class Order extends Base {
     private Member member;
 
     @Column(nullable = false)
-    private String orderNo;
+    private String orderNumber;
 
     @Column(nullable = false)
-    private Integer totalPrice;
+    private Integer totalAmount;
 
     @Column(nullable = false)
-    private Integer price;
+    private Integer finalAmount;
 
     @Column(nullable = false)
-    private Integer usePoint;
+    private Integer quantity;
 
     @Column(nullable = false)
-    private Integer savePoint;
+    private Integer usePoints;
+
+    @Column(nullable = false)
+    private Integer earnedPoints;
+
+    @Column(nullable = false)
+    private String currency;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -53,23 +61,24 @@ public class Order extends Base {
 
     public static Order register(
             Member member,
-            String orderNo,
-            Integer totalPrice,
-            Integer price,
-            Integer usePoint,
-            Integer savePoint,
-            OrderStatus status,
-            LocalDateTime orderAt
+            Integer totalAmount,
+            Integer usePoints,
+            Integer finalAmount,
+            Integer earnedPoints,
+            Integer quantity,
+            String currency
     ) {
         Order order = new Order();
+
         order.member = member;
-        order.orderNo = orderNo;
-        order.totalPrice = totalPrice;
-        order.price = price;
-        order.usePoint = usePoint;
-        order.savePoint = savePoint;
-        order.status = status;
-        order.orderAt = orderAt;
+        order.totalAmount = totalAmount;
+        order.usePoints = usePoints == null ? 0 : usePoints; // null 이면 0으로 처리
+        order.finalAmount = finalAmount;
+        order.earnedPoints = earnedPoints == null ? 0 : earnedPoints; // null 이면 0으로 처리
+        order.quantity = quantity;
+        order.currency = "KRW";
+        order.orderNumber = "ORDER-" + LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE)+ UUID.randomUUID().toString().substring(0, 8);
+        order.status = OrderStatus.PENDING;
         order.deleted = false;
         order.deletedAt = null;
 
