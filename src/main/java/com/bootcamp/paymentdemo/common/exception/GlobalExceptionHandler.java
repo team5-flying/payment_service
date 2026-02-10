@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +44,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<Void>> DataIntegrityViolationExceptionHandler(DataIntegrityViolationException e) {
         log.error("데이터 등록 실패 발생 : ", e);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(BaseResponse.fail(String.valueOf(HttpStatus.BAD_REQUEST.value()), MSG_DATA_INSERT_FAIL, null));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<BaseResponse<Void>> handleAuthException(AuthenticationException e) {
+        log.error("인증 실패 : ",  e);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(BaseResponse.fail(String.valueOf(HttpStatus.UNAUTHORIZED), e.getMessage(), null));
     }
 
     @ExceptionHandler(Exception.class)

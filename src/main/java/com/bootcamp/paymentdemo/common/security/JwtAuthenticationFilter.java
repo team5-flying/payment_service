@@ -1,58 +1,52 @@
 package com.bootcamp.paymentdemo.common.security;
 
+import com.bootcamp.paymentdemo.domain.member.service.MemberUserDetailsService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
-/**
- * JWT 토큰 인증 필터
- * 모든 요청에서 JWT 토큰을 검증하고 SecurityContext에 인증 정보 설정
- *
- * TODO: 개선 사항
- * - 역할(Role) 정보를 토큰에서 추출
- * - 예외 처리 개선
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtProvider jwtProvider;
+    private final MemberUserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
+    public JwtAuthenticationFilter(JwtProvider jwtProvider, MemberUserDetailsService userDetailsService) {
+        this.jwtProvider = jwtProvider;
+        this.userDetailsService =  userDetailsService;
     }
 
     @Override
-    protected void doFilterInternal(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         try {
             // 1. Request Header에서 JWT 토큰 추출
             String token = getJwtFromRequest(request);
 
             // 2. 토큰 유효성 검증
-            if (token != null && jwtTokenProvider.validateToken(token)) {
+            if (token != null && jwtProvider.validateToken(token)) {
                 // 3. 토큰에서 사용자 정보 추출
-                String email = jwtTokenProvider.getEmail(token);
+                String email = jwtProvider.getClaims(token).getSubject();
+
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 // 4. 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            email,
+                            userDetails,
                         null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                            userDetails.getAuthorities()
                     );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -60,9 +54,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 5. SecurityContext에 인증 정보 설정
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (ExpiredJwtException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "토큰이 만료되었습니다");
+            return;
+        } catch (JwtException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않은 토큰입니다");
+            return;
         } catch (Exception e) {
-            logger.error("JWT 인증 실패", e);
-            // TODO: 구현 - 적절한 에러 응답
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "서버 오류");
+            return;
         }
 
         filterChain.doFilter(request, response);
@@ -82,8 +82,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        return true;
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                """
+                {
+                  "status": %d,
+                  "message": "%s"
+                }
+                """.formatted(status, message)
+        );
     }
 }

@@ -1,22 +1,25 @@
 package com.bootcamp.paymentdemo.domain.member.dto;
 
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SaveMemberResponse {
 
-    private Long memberId;
-    private String name;
-    private String email;
-    private String phone;
+    private final Long memberId;
+    private final String name;
+    private final String email;
+    private final String phone;
 
     public static SaveMemberResponse register(Member member) {
-        SaveMemberResponse response = new SaveMemberResponse();
-        response.memberId = member.getMemberId();
-        response.name = member.getName();
-        response.email = member.getEmail();
-        response.phone = member.getPhoneNo();
-        return response;
+        return new SaveMemberResponse(
+                member.getMemberId(),
+                member.getName(),
+                member.getEmail(),
+                member.getPhoneNo()
+        );
     }
 }
