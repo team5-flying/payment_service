@@ -28,7 +28,7 @@ api:
     # 인증 (Authentication)
     # ========================================
     login:
-      url: /api/auth/login
+      url: /api/login
       method: POST
       description: 사용자 로그인
       request:

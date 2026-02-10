@@ -50,8 +50,7 @@ portone:
     toss: ${PORTONE_CHANNEL_TOSS:your-toss-channel-key}
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:commercehub-secret-key-for-demo-please-change-this-in-production-environment}
-  token-validity-in-seconds: ${JWT_VALIDITY:86400}  # 24 hours
+  secret: c3BhcnRhIG5iY2FtIHRlYW01IGZseWluZyBwYXltZW50IHNlcnZpY2UgcHJvamVjdA==
 
 
 # UI Branding Configuration
