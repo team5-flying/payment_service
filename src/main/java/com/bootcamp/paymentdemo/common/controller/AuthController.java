@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.common.controller;
 
-import com.bootcamp.paymentdemo.common.security.JwtTokenProvider;
+import com.bootcamp.paymentdemo.common.security.JwtProvider;
+import com.bootcamp.paymentdemo.domain.member.entity.MemberRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtProvider jwtProvider;
 
     /**
      * 로그인 API
@@ -58,7 +59,7 @@ public class AuthController {
             );
 
             // 2. JWT 토큰 생성
-            String token = jwtTokenProvider.createToken(email);
+            String token = jwtProvider.createToken(email, MemberRole.ROLE_USER);
 
             // 3. 응답
             response.put("success", true);
