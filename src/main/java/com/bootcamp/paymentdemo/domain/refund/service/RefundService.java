@@ -52,9 +52,9 @@ public class RefundService {
         updateMemberGrade(member);
 
         // 포인트 복구
-        if (order.getUsePoints() > 0) {
-            member.addPoint(order.getUsePoints());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getUsePoints(), MemberPointLogStatus.RECOVER, member));
+        if (order.getUsedPoints() > 0) {
+            member.addPoint(order.getUsedPoints());
+            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
         }
 
         // 적립 취소

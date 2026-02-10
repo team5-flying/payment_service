@@ -7,19 +7,29 @@ import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateRequest;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
+import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
+import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
+import com.bootcamp.paymentdemo.domain.product.entity.Product;
+import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.cache.spi.support.AbstractReadWriteAccess;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final ProductOrderRepository productOrderRepository;
     private final MemberRepository memberRepository;
 
     // 구현 : 주문 생성, 목록 조회, 단건 조회
@@ -27,25 +37,50 @@ public class OrderService {
     public OrderCreateResponse save(OrderCreateRequest request) {
 
         // TODO 테스트용, 삭제 필요
-        Long memberId = 1L;
+        Long memberId = 0L;
 
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
+        Member member = memberRepository.findById(request.getMemberId()).orElseThrow(
+            () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
 
-        Order order = Order.register (
-                 member
-                , request.getTotalAmount()
-                , request.getUsePoints()
+        // 서버측 총액 계산 한번 더 진행 (보안)
+        int calculateTotalAmount = 0;
+        for(OrderItemRequest item : request.getItems()) {
+            Product product = productRepository.findById(item.getProductId()).orElseThrow(
+                    () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT)
+            );
+            calculateTotalAmount += product.getPrice() * item.getQuantity();
+        }
+
+        Order order = Order.register(
+                member
+                , calculateTotalAmount
+                , request.getUsedPoints()
                 , request.getFinalAmount()
                 , request.getEarnedPoints()
                 , request.getQuantity()
-                ,"KRW"
+                , "KRW"
         );
 
         Order savedOrder = orderRepository.save(order);
 
-        // TODO : 상품 리스트 (product_orders) 저장 로직 추가 (진행중)
+        // 상품 주문 리스트 저장
+        List<ProductOrder> items = request.getItems()
+                .stream()
+                .map(item -> {
+                    Product product = productRepository.findById(item.getProductId()).orElseThrow(
+                            () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT));
+
+                    return  ProductOrder.register(
+                            product
+                            , savedOrder
+                            , item.getProductName()
+                            , item.getPrice()
+                            , item.getQuantity()
+                    );
+                        }) .collect (Collectors.toList());
+
+        productOrderRepository.saveAll(items);
 
         return OrderCreateResponse.register(
                 savedOrder.getOrderId()
@@ -67,7 +102,7 @@ public class OrderService {
                                 , order.getMember().getMemberId()
                                 , order.getOrderNumber()
                                 , order.getTotalAmount()
-                                , order.getUsePoints()
+                                , order.getUsedPoints()
                                 , order.getFinalAmount()
                                 , order.getEarnedPoints()
                                 , order.getCurrency()
@@ -89,7 +124,7 @@ public class OrderService {
                 , order.getMember().getMemberId()
                 , order.getOrderNumber()
                 , order.getTotalAmount()
-                , order.getUsePoints()
+                , order.getUsedPoints()
                 , order.getFinalAmount()
                 , order.getEarnedPoints()
                 , order.getCurrency()

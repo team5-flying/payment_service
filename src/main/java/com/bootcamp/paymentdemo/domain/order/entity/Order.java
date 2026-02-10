@@ -38,7 +38,7 @@ public class Order extends Base {
     private Integer quantity;
 
     @Column(nullable = false)
-    private Integer usePoints;
+    private Integer usedPoints;
 
     @Column(nullable = false)
     private Integer earnedPoints;
@@ -62,7 +62,7 @@ public class Order extends Base {
     public static Order register(
             Member member,
             Integer totalAmount,
-            Integer usePoints,
+            Integer usedPoints,
             Integer finalAmount,
             Integer earnedPoints,
             Integer quantity,
@@ -72,7 +72,7 @@ public class Order extends Base {
 
         order.member = member;
         order.totalAmount = totalAmount;
-        order.usePoints = usePoints == null ? 0 : usePoints; // null 이면 0으로 처리
+        order.usedPoints = usedPoints == null ? 0 : usedPoints; // null 이면 0으로 처리
         order.finalAmount = finalAmount;
         order.earnedPoints = earnedPoints == null ? 0 : earnedPoints; // null 이면 0으로 처리
         order.quantity = quantity;
