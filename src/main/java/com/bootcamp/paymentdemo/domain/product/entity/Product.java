@@ -53,7 +53,6 @@ public class Product extends Base {
     ) {
         Product product = new Product();
 
-        product.productUid = UUID.randomUUID().toString();
         product.name = name;
         product.category = category;
         product.description = description;

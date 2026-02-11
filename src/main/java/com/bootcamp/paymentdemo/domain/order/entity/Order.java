@@ -8,7 +8,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Getter
 @Entity
@@ -65,7 +67,7 @@ public class Order extends Base {
             Long earnedPoints,
             Long quantity,
             String currency,
-            String generateOrderNumber
+            String orderNumber
     ) {
         Order order = new Order();
 
@@ -76,7 +78,7 @@ public class Order extends Base {
         order.earnedPoints = earnedPoints == null ? 0 : earnedPoints; // null 이면 0으로 처리
         order.quantity = quantity;
         order.currency = "KRW";
-        order.orderNumber = generateOrderNumber;
+        order.orderNumber = orderNumber;
         order.status = OrderStatus.PENDING;
         order.deleted = false;
         order.deletedAt = null;

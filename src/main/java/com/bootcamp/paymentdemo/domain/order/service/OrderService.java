@@ -5,21 +5,25 @@ import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
-import com.bootcamp.paymentdemo.domain.order.dto.*;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateRequest;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
+import com.bootcamp.paymentdemo.domain.order.entity.OrderNumberSequence;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
+import com.bootcamp.paymentdemo.domain.order.repository.OrderNumberSequenceRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,19 +35,18 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final ProductOrderRepository productOrderRepository;
     private final MemberRepository memberRepository;
-    private final EntityManager entityManager;
+    private final OrderNumberSequenceRepository orderNumberSequenceRepository;
 
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Member member = memberRepository.findByEmail(email).orElseThrow(
+        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
                 () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
 
-        // 주문번호 생성 : 숫자에서 문자열로 받아오기
-        DatePrefixedSequenceIdGenerator generator = new DatePrefixedSequenceIdGenerator();
-        String orderNumberSeq = (String) generator.generate((SharedSessionContractImplementor) entityManager.getDelegate(), null);
+        // 주문번호 생성
+        String orderNumber = createOrderNumber();
 
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
@@ -68,7 +71,7 @@ public class OrderService {
 
         long usedPoints = 0;
         long finalAmount = calculateTotalAmount - usedPoints;
-        long earnedPoints = (int) (finalAmount * (grade.getPointRate()/100.0));
+        long earnedPoints = (int) (finalAmount * (grade.getPointRate() / 100.0));
 
         Order order = Order.register(
                 member
@@ -78,7 +81,7 @@ public class OrderService {
                 , earnedPoints
                 , totalQuantity
                 , "KRW"
-                , orderNumberSeq
+                , orderNumber
         );
 
         Order savedOrder = orderRepository.save(order);
@@ -153,5 +156,19 @@ public class OrderService {
                 , order.isDeleted()
                 , order.getDeletedAt()
         );
+    }
+
+    @Transactional
+    public String createOrderNumber() {
+        String dateSeq = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        OrderNumberSequence sequence = orderNumberSequenceRepository.findWithLockBySequenceDate(dateSeq)
+                .orElseGet(() -> orderNumberSequenceRepository.save(new OrderNumberSequence(dateSeq)));
+
+        String orderNumber = String.format("ORDER-%s-%06d", dateSeq, sequence.getLastNumber());
+
+        sequence.increment();
+
+        return orderNumber;
     }
 }
