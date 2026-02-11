@@ -59,7 +59,7 @@ public class AuthController {
             );
 
             // 2. JWT 토큰 생성
-            String token = jwtProvider.createToken(email, MemberRole.ROLE_USER);
+            String token = jwtProvider.createAccessToken(email, MemberRole.ROLE_USER);
 
             // 3. 응답
             response.put("success", true);
