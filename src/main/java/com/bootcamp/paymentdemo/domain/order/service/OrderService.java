@@ -38,7 +38,7 @@ public class OrderService {
         );
 
         // 서버측 총액 계산 한번 더 진행 (보안)
-        int calculateTotalAmount = 0;
+        long calculateTotalAmount = 0;
         for(OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow(
                     () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT)
@@ -53,7 +53,6 @@ public class OrderService {
                 , request.getFinalAmount()
                 , request.getEarnedPoints()
                 , request.getQuantity()
-                , "KRW"
         );
 
         Order savedOrder = orderRepository.save(order);

@@ -12,7 +12,7 @@ public class SearchMemberResponse {
     private final String email;
     private final String name;
     private final String phone;
-    private final Integer pointBalance;
+    private final Long pointBalance;
 
     public static SearchMemberResponse register(Member member) {
         return new SearchMemberResponse(

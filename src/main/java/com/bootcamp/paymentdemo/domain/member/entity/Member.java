@@ -47,10 +47,10 @@ public class Member extends Base {
     private LocalDateTime gradeAt;
 
     @Column(nullable = false)
-    private Integer point;
+    private Long point;
 
     @Column(nullable = false)
-    private Integer totalPriceAmount;
+    private Long totalPriceAmount;
 
     @Column(nullable = false)
     private boolean deleted;
@@ -69,41 +69,41 @@ public class Member extends Base {
         member.role = MemberRole.ROLE_USER;
         member.grade = Grade.BRONZE;
         member.gradeAt = LocalDateTime.now();
-        member.point = 0;
-        member.totalPriceAmount = 0;
+        member.point = 0L;
+        member.totalPriceAmount = 0L;
         member.deleted = false;
         return member;
     }
 
-    public void addPoint(Integer amount) {
+    public void addPoint(Long amount) {
         this.point += amount;
     }
 
-    public void minusPoint(Integer amount) {
+    public void minusPoint(Long amount) {
         this.point -= amount;
     }
 
-    public void addTotalPriceAmount(Integer amount) {
+    public void addTotalPriceAmount(Long amount) {
         if (amount == null || amount < 0) return;
 
         if (this.totalPriceAmount == null) {
-            this.totalPriceAmount = 0;
+            this.totalPriceAmount = 0L;
         }
         this.totalPriceAmount += amount;
     }
 
-    public void subtractTotalPriceAmount(Integer amount) {
+    public void subtractTotalPriceAmount(Long amount) {
         if (amount == null || amount < 0) return;
 
         if (this.totalPriceAmount == null) {
-            this.totalPriceAmount = 0;
+            this.totalPriceAmount = 0L;
         }
 
         // 누적 금액이 차감액보다 적으면 0으로 초기화 (음수 방지)
         if (this.totalPriceAmount >= amount) {
             this.totalPriceAmount -= amount;
         } else {
-            this.totalPriceAmount = 0;
+            this.totalPriceAmount = 0L;
         }
     }
 

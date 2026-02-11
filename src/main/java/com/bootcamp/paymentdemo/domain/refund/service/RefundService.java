@@ -32,7 +32,7 @@ public class RefundService {
 
     @Transactional
     public void processRefund(String paymentId) {
-        Payment payment = paymentRepository.findByPortOneId(paymentId)
+        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
         Order order = payment.getOrder();
         Member member = order.getMember();
