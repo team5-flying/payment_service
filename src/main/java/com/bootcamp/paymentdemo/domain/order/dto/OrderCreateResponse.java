@@ -9,13 +9,13 @@ import lombok.NoArgsConstructor;
 public class OrderCreateResponse {
 
     private Long memberId;
-    private Long orderId;
+    private String orderId;
     private Long totalAmount;
     private String orderNumber;
 
     private OrderCreateResponse(
             Long memberId,
-            Long orderId,
+            String orderId,
             Long totalAmount,
             String orderNumber
     ) {
@@ -27,7 +27,7 @@ public class OrderCreateResponse {
 
     public static OrderCreateResponse register(
             Long memberId,
-            Long orderId,
+            String orderId,
             Long totalAmount,
             String orderNumber
     ) {

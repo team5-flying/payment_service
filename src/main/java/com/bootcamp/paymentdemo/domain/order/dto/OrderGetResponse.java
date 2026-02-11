@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderGetResponse extends Base {
 
-    private Long orderId;
+    private String orderId;
     private Long memberId;
     private String orderNumber;
     private Long totalAmount;
@@ -26,7 +26,7 @@ public class OrderGetResponse extends Base {
     private LocalDateTime deletedAt;
 
     private OrderGetResponse(
-            Long orderId,
+            String orderId,
             Long memberId,
             String orderNumber,
             Long totalAmount,
@@ -54,7 +54,7 @@ public class OrderGetResponse extends Base {
     }
 
     public static OrderGetResponse register(
-            Long orderId,
+            String orderId,
             Long memberId,
             String orderNumber,
             Long totalAmount,
