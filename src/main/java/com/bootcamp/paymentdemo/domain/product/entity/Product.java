@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -52,6 +53,7 @@ public class Product extends Base {
     ) {
         Product product = new Product();
 
+        product.productUid = UUID.randomUUID().toString();
         product.name = name;
         product.category = category;
         product.description = description;

@@ -5,6 +5,8 @@ import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderGetResponse extends Base {
 
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long orderId;
     private Long memberId;
     private String orderNumber;

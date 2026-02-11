@@ -1,16 +1,14 @@
 package com.bootcamp.paymentdemo.domain.order.entity;
 
 import com.bootcamp.paymentdemo.common.entity.Base;
-import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
+import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 @Getter
 @Entity
@@ -25,7 +23,7 @@ public class Order extends Base {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String orderNumber;
 
     @Column(nullable = false)
@@ -65,7 +63,9 @@ public class Order extends Base {
             Long usedPoints,
             Long finalAmount,
             Long earnedPoints,
-            Long quantity
+            Long quantity,
+            String currency,
+            String generateOrderNumber
     ) {
         Order order = new Order();
 
@@ -76,7 +76,7 @@ public class Order extends Base {
         order.earnedPoints = earnedPoints == null ? 0 : earnedPoints; // null 이면 0으로 처리
         order.quantity = quantity;
         order.currency = "KRW";
-        order.orderNumber = "ORDER-" + LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE)+ UUID.randomUUID().toString().substring(0, 8);
+        order.orderNumber = generateOrderNumber;
         order.status = OrderStatus.PENDING;
         order.deleted = false;
         order.deletedAt = null;
@@ -86,7 +86,7 @@ public class Order extends Base {
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
-        if(status == OrderStatus.REFUNDED) {
+        if (status == OrderStatus.REFUNDED) {
             this.deleted = true;
             this.deletedAt = LocalDateTime.now();
         }
