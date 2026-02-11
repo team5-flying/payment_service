@@ -116,7 +116,7 @@ public class OrderService {
 
         return OrderCreateResponse.register(
                 savedOrder.getMember().getMemberId()
-                , savedOrder.getOrderId()
+                , String.valueOf(savedOrder.getOrderId())
                 , savedOrder.getTotalAmount()
                 , savedOrder.getOrderNumber()
         );
@@ -131,7 +131,7 @@ public class OrderService {
         return orders.stream()
                 .map(order ->
                         OrderGetResponse.register(
-                                order.getOrderId()
+                                String.valueOf(order.getOrderId())
                                 , order.getMember().getMemberId()
                                 , order.getOrderNumber()
                                 , order.getTotalAmount()
@@ -153,7 +153,7 @@ public class OrderService {
         );
 
         return OrderGetResponse.register(
-                order.getOrderId()
+                String.valueOf(order.getOrderId())
                 , order.getMember().getMemberId()
                 , order.getOrderNumber()
                 , order.getTotalAmount()
