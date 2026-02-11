@@ -22,7 +22,7 @@ public class MemberPointLog {
     private String orderNo;
 
     @Column(nullable = false)
-    private Integer point;
+    private Long point;
 
     @Column(nullable = false)
     private LocalDateTime saveAt;
@@ -38,7 +38,7 @@ public class MemberPointLog {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    public static MemberPointLog create(String OrderNo, Integer point, MemberPointLogStatus status, Member member) {
+    public static MemberPointLog create(String OrderNo, Long point, MemberPointLogStatus status, Member member) {
         MemberPointLog log = new MemberPointLog();
         log.orderNo = OrderNo;
         log.point = point;

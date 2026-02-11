@@ -16,7 +16,7 @@ public enum Grade {
     private final int pointRate;
     private final int minAmount;
 
-    public static Grade determineGrade(int totalAmount) {
+    public static Grade determineGrade(Long totalAmount) {
         for (Grade grade : values()) {
             if(totalAmount >= grade.getMinAmount()) {
                 return grade;

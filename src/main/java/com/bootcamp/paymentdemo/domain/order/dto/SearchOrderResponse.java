@@ -3,10 +3,10 @@ package com.bootcamp.paymentdemo.domain.order.dto;
 public record SearchOrderResponse(
        String orderNumber
        , String orderId
-       , Integer totalAmount
-       , Integer usedPoints
-       , Integer finalAmount
-       , Integer earnedPoints
+       , Long totalAmount
+       , Long usedPoints
+       , Long finalAmount
+       , Long earnedPoints
        , String currency
        , String status
        , String createdAt

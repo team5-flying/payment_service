@@ -92,4 +92,16 @@ public class Order extends Base {
         }
     }
 
+    // 포인트 적립 업데이트
+    public void updateEarnedPoints(Long earnedPoints) {
+        this.earnedPoints = earnedPoints;
+    }
+
+    // 포인트 소모 업데이트
+    // 실 결제 금액도 같이 수정됨
+    public void updateUsedPoints(Long usedPoints) {
+        this.usedPoints = usedPoints;
+        this.finalAmount = totalAmount - usedPoints;
+    }
+
 }

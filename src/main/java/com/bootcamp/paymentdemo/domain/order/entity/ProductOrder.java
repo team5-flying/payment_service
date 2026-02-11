@@ -4,7 +4,6 @@ package com.bootcamp.paymentdemo.domain.order.entity;
 import com.bootcamp.paymentdemo.common.entity.Base;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

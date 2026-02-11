@@ -19,8 +19,6 @@ public class Product extends Base {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String productUid;
-
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -66,5 +64,15 @@ public class Product extends Base {
         product.deletedAt = null;
 
         return product;
+    }
+
+    public void updateStock(Long stock) {
+        this.stock -= stock;
+
+        if(this.stock > 0) {
+            this.status = ProductStatus.SALES;
+        } else {
+            this.status = ProductStatus.SOLDOUT;
+        }
     }
 }
