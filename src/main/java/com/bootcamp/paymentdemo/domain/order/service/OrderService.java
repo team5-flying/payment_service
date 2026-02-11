@@ -45,12 +45,19 @@ public class OrderService {
         );
 
         // 주문번호 생성
-        String orderNumber = createOrderNumber();
+        String dateSeq = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        OrderNumberSequence sequence = orderNumberSequenceRepository.findWithLockBySequenceDate(dateSeq)
+                .orElseGet(() -> orderNumberSequenceRepository.save(new OrderNumberSequence(dateSeq)));
+
+        String orderNumber = String.format("ORDER-%s-%06d", dateSeq, sequence.getLastNumber());
+
+        sequence.increment();
 
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
 
-        for(OrderItemRequest item : request.getItems()) {
+        for (OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow(
                     () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT)
             );
@@ -65,6 +72,7 @@ public class OrderService {
                 , request.getFinalAmount()
                 , request.getEarnedPoints()
                 , request.getQuantity()
+                , orderNumber
         );
 
         Order savedOrder = orderRepository.save(order);
@@ -84,7 +92,7 @@ public class OrderService {
                             , item.getQuantity()
                     );
                 })
-                .collect (Collectors.toList());
+                .collect(Collectors.toList());
 
         productOrderRepository.saveAll(items);
 
@@ -140,19 +148,5 @@ public class OrderService {
                 , order.isDeleted()
                 , order.getDeletedAt()
         );
-    }
-
-    @Transactional
-    public String createOrderNumber() {
-        String dateSeq = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        OrderNumberSequence sequence = orderNumberSequenceRepository.findWithLockBySequenceDate(dateSeq)
-                .orElseGet(() -> orderNumberSequenceRepository.save(new OrderNumberSequence(dateSeq)));
-
-        String orderNumber = String.format("ORDER-%s-%06d", dateSeq, sequence.getLastNumber());
-
-        sequence.increment();
-
-        return orderNumber;
     }
 }
