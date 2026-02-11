@@ -27,19 +27,19 @@ public class Order extends Base {
     private String orderNumber;
 
     @Column(nullable = false)
-    private Integer totalAmount;
+    private Long totalAmount;
 
     @Column(nullable = false)
-    private Integer finalAmount;
+    private Long finalAmount;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Long quantity;
 
     @Column(nullable = false)
-    private Integer usedPoints;
+    private Long usedPoints;
 
     @Column(nullable = false)
-    private Integer earnedPoints;
+    private Long earnedPoints;
 
     @Column(nullable = false)
     private String currency;
@@ -59,11 +59,11 @@ public class Order extends Base {
 
     public static Order register(
             Member member,
-            Integer totalAmount,
-            Integer usedPoints,
-            Integer finalAmount,
-            Integer earnedPoints,
-            Integer quantity,
+            Long totalAmount,
+            Long usedPoints,
+            Long finalAmount,
+            Long earnedPoints,
+            Long quantity,
             String currency,
             String generateOrderNumber
     ) {

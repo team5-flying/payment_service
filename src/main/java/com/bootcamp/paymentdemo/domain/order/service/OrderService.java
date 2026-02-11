@@ -46,8 +46,8 @@ public class OrderService {
         String orderNumberSeq = (String) generator.generate((SharedSessionContractImplementor) entityManager.getDelegate(), null);
 
         // 서버측 총액 계산 한번 더 진행 (보안)
-        int calculateTotalAmount = 0;
-        int totalQuantity = 0;
+        long calculateTotalAmount = 0;
+        long totalQuantity = 0;
 
         for (OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow(
@@ -66,9 +66,9 @@ public class OrderService {
         // 포인트 및 최종 결제 금액 계산
         Grade grade = member.getGrade();
 
-        int usedPoints = 0;
-        int finalAmount = calculateTotalAmount - usedPoints;
-        int earnedPoints = (int) (finalAmount * (grade.getPointRate()/100.0));
+        long usedPoints = 0;
+        long finalAmount = calculateTotalAmount - usedPoints;
+        long earnedPoints = (int) (finalAmount * (grade.getPointRate()/100.0));
 
         Order order = Order.register(
                 member

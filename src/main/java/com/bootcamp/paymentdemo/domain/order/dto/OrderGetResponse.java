@@ -18,10 +18,10 @@ public class OrderGetResponse extends Base {
     private Long orderId;
     private Long memberId;
     private String orderNumber;
-    private Integer totalAmount;
-    private Integer usePoints;
-    private Integer finalAmount;
-    private Integer earnedPoints;
+    private Long totalAmount;
+    private Long usePoints;
+    private Long finalAmount;
+    private Long earnedPoints;
     private String currency;
     private OrderStatus status;
     private LocalDateTime orderAt;
@@ -32,10 +32,10 @@ public class OrderGetResponse extends Base {
             Long orderId,
             Long memberId,
             String orderNumber,
-            Integer totalAmount,
-            Integer usePoints,
-            Integer finalAmount,
-            Integer earnedPoints,
+            Long totalAmount,
+            Long usePoints,
+            Long finalAmount,
+            Long earnedPoints,
             String currency,
             OrderStatus status,
             LocalDateTime orderAt,
@@ -60,10 +60,10 @@ public class OrderGetResponse extends Base {
             Long orderId,
             Long memberId,
             String orderNumber,
-            Integer totalAmount,
-            Integer usePoints,
-            Integer finalAmount,
-            Integer earnedPoints,
+            Long totalAmount,
+            Long usePoints,
+            Long finalAmount,
+            Long earnedPoints,
             String currency,
             OrderStatus status,
             LocalDateTime orderAt,

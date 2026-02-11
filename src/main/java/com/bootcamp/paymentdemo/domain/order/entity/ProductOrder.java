@@ -27,7 +27,7 @@ public class ProductOrder extends Base {
     private Long priceSnap;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Long quantity;
 
     @Column(nullable = false)
     private boolean deleted;
@@ -47,7 +47,7 @@ public class ProductOrder extends Base {
             Order order,
             String nameSnap,
             Long priceSnap,
-            Integer quantity
+            Long quantity
     ) {
         ProductOrder productOrder = new ProductOrder();
 
