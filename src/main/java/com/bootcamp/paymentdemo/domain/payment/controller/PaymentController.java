@@ -1,5 +1,7 @@
 package com.bootcamp.paymentdemo.domain.payment.controller;
 
+import com.bootcamp.paymentdemo.common.dto.BaseResponse;
+import com.bootcamp.paymentdemo.domain.payment.dto.ConfirmPaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentRequest;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
@@ -7,10 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -19,11 +20,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
     private final PaymentService paymentService;
 
-    //FIXME 결제창이 뜨지 못할 경우 -> 스케줄러?
-
     //TODO Valid 처리는 어느정도 완성 이후 적용 예정
     @PostMapping
-    public ResponseEntity<CreatePaymentResponse> createPayment(@RequestBody CreatePaymentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createPayment(request));
+    public ResponseEntity<BaseResponse<CreatePaymentResponse>> createPayment(@RequestBody CreatePaymentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), null, paymentService.createPayment(request)));
+    }
+
+    @PostMapping("/{paymentId}/confirm")
+    public ResponseEntity<BaseResponse<ConfirmPaymentResponse>> confirmPayment(
+            @PathVariable String paymentId
+            , @AuthenticationPrincipal UserDetails loginMemberInfo
+    ) {
+        String email = loginMemberInfo.getUsername();
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), null, paymentService.confirmPayment(paymentId, email)));
     }
 }

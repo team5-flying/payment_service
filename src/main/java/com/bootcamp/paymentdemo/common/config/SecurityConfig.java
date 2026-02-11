@@ -46,6 +46,9 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
+            // Form Login 사용 안함
+            .formLogin(AbstractHttpConfigurer::disable)
+
             // 요청 권한 설정
             .authorizeHttpRequests(authorize -> authorize
                      // 1) 정적 리소스

@@ -26,7 +26,7 @@ public class MemberService {
 
     @Transactional
     public SaveMemberResponse signup(SaveMemberRequest request) {
-        if (memberRepository.existsByEmail(request.getEmail())) {
+        if (memberRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
             throw new ServiceErrorException(ErrorEnum.ERR_DUPLICATE_EMAIL);
         }
 

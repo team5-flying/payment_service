@@ -10,13 +10,13 @@ public class OrderCreateResponse {
 
     private Long memberId;
     private Long orderId;
-    private Integer totalAmount;
+    private Long totalAmount;
     private String orderNumber;
 
     private OrderCreateResponse(
             Long memberId,
             Long orderId,
-            Integer totalAmount,
+            Long totalAmount,
             String orderNumber
     ) {
         this.memberId = memberId;
@@ -28,7 +28,7 @@ public class OrderCreateResponse {
     public static OrderCreateResponse register(
             Long memberId,
             Long orderId,
-            Integer totalAmount,
+            Long totalAmount,
             String orderNumber
     ) {
         return new OrderCreateResponse(memberId, orderId, totalAmount, orderNumber);

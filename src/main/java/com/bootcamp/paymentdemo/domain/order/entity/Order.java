@@ -29,19 +29,19 @@ public class Order extends Base {
     private String orderNumber;
 
     @Column(nullable = false)
-    private Integer totalAmount;
+    private Long totalAmount;
 
     @Column(nullable = false)
-    private Integer finalAmount;
+    private Long finalAmount;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Long quantity;
 
     @Column(nullable = false)
-    private Integer usedPoints;
+    private Long usedPoints;
 
     @Column(nullable = false)
-    private Integer earnedPoints;
+    private Long earnedPoints;
 
     @Column(nullable = false)
     private String currency;
@@ -61,12 +61,11 @@ public class Order extends Base {
 
     public static Order register(
             Member member,
-            Integer totalAmount,
-            Integer usedPoints,
-            Integer finalAmount,
-            Integer earnedPoints,
-            Integer quantity,
-            String currency
+            Long totalAmount,
+            Long usedPoints,
+            Long finalAmount,
+            Long earnedPoints,
+            Long quantity
     ) {
         Order order = new Order();
 
@@ -91,6 +90,18 @@ public class Order extends Base {
             this.deleted = true;
             this.deletedAt = LocalDateTime.now();
         }
+    }
+
+    // 포인트 적립 업데이트
+    public void updateEarnedPoints(Long earnedPoints) {
+        this.earnedPoints = earnedPoints;
+    }
+
+    // 포인트 소모 업데이트
+    // 실 결제 금액도 같이 수정됨
+    public void updateUsedPoints(Long usedPoints) {
+        this.usedPoints = usedPoints;
+        this.finalAmount = totalAmount - usedPoints;
     }
 
 }
