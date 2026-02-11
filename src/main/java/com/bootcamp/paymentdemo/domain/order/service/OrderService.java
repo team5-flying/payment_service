@@ -40,7 +40,9 @@ public class OrderService {
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
 
-        Member member = memberRepository.findById(request.getMemberId()).orElseThrow(
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
                 () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
 
@@ -56,22 +58,35 @@ public class OrderService {
 
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
+        long totalQuantity = 0;
 
         for (OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow(
                     () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT)
             );
 
+            // 재고 확인
+            if (product.getStock() < item.getQuantity()) {
+                throw new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT);
+            }
             calculateTotalAmount += product.getPrice() * item.getQuantity();
+            totalQuantity += item.getQuantity();
         }
+
+        // 포인트 및 최종 결제 금액 계산
+        Grade grade = member.getGrade();
+
+        long usedPoints = 0;
+        long finalAmount = calculateTotalAmount - usedPoints;
+        long earnedPoints = (long) (finalAmount * (grade.getPointRate()/100.0));
 
         Order order = Order.register(
                 member
                 , calculateTotalAmount
-                , request.getUsedPoints()
-                , request.getFinalAmount()
-                , request.getEarnedPoints()
-                , request.getQuantity()
+                , usedPoints
+                , finalAmount
+                , earnedPoints
+                , totalQuantity
                 , orderNumber
         );
 
@@ -87,8 +102,8 @@ public class OrderService {
                     return ProductOrder.register(
                             product
                             , savedOrder
-                            , item.getProductName()
-                            , item.getPrice()
+                            , product.getName()
+                            , product.getPrice()
                             , item.getQuantity()
                     );
                 })
