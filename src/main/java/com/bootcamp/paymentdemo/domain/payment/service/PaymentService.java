@@ -18,6 +18,7 @@ import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLog;
 import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLogStatus;
 import com.bootcamp.paymentdemo.domain.point.repository.MemberPointLogRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -102,16 +104,21 @@ public class PaymentService {
         // FIXME 누적 구매금액 적용할 때 등급 반영 로직 추가되어야함
         member.addTotalPriceAmount(payment.getPriceSnap());
 
-        // 고객 포인트 적립, 포인트 적립 이력 생성
-        member.addPoint(payment.getOrder().getEarnedPoints());
-        MemberPointLog savedSavePointLog = MemberPointLog.create(payment.getOrder().getOrderNumber(), payment.getOrder().getEarnedPoints(), MemberPointLogStatus.SAVE, member);
-        memberPointLogRepository.save(savedSavePointLog);
+        try {
+            // 고객 포인트 적립, 포인트 적립 이력 생성
+            member.addPoint(payment.getOrder().getEarnedPoints());
+            MemberPointLog savedSavePointLog = MemberPointLog.create(payment.getOrder().getOrderNumber(), payment.getOrder().getEarnedPoints(), MemberPointLogStatus.SAVE, member);
+            memberPointLogRepository.save(savedSavePointLog);
 
-        // 고객 포인트 소모, 포인트 소모 이력 생성
-        if (payment.getOrder().getUsedPoints() > 0) {
-            member.minusPoint(payment.getOrder().getUsedPoints());
-            MemberPointLog savedUsePointLog = MemberPointLog.create(payment.getOrder().getOrderNumber(), payment.getOrder().getUsedPoints(), MemberPointLogStatus.USE, member);
-            memberPointLogRepository.save(savedUsePointLog);
+            // 고객 포인트 소모, 포인트 소모 이력 생성
+            if (payment.getOrder().getUsedPoints() > 0) {
+                member.minusPoint(payment.getOrder().getUsedPoints());
+                MemberPointLog savedUsePointLog = MemberPointLog.create(payment.getOrder().getOrderNumber(), payment.getOrder().getUsedPoints(), MemberPointLogStatus.USE, member);
+                memberPointLogRepository.save(savedUsePointLog);
+            }
+        } catch (Exception e) {
+            log.error("포인트 로그 저장 실패 : {}", e.getMessage());
+            throw new ServiceErrorException(ERR_SAVED_DATA_FAILED);
         }
 
         return ConfirmPaymentResponse.register(true, payment.getOrder().getOrderId().toString(), PaymentStatus.COMPLETE.name());

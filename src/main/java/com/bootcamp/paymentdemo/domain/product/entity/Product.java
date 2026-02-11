@@ -1,13 +1,17 @@
 package com.bootcamp.paymentdemo.domain.product.entity;
 
 import com.bootcamp.paymentdemo.common.entity.Base;
+import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
+import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Getter
 @Entity
 @Table(name = "products")
@@ -65,6 +69,11 @@ public class Product extends Base {
     }
 
     public void updateStock(Long stock) {
+        if (this.stock < stock) {
+            log.error("상품 재고 변경 실패 : {}", "변경할 재고 = " + stock + ", [ " + this.name + " ] 의 재고 = " + this.stock);
+            throw new ServiceErrorException(ErrorEnum.ERR_NOT_ENOUGH_STOCK);
+        }
+
         this.stock -= stock;
 
         if(this.stock > 0) {

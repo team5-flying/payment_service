@@ -45,7 +45,11 @@ public enum ErrorEnum {
     // region 환불 관련
     ERR_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PAYMENT),
     ERR_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, MSG_ALREADY_REFUNDED),
-    ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS);
+    ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
+    // endregion
+
+    // region 서버 관련
+    ERR_SAVED_DATA_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, MSG_DATA_INSERT_FAIL);
     // endregion
 
     private final HttpStatus status;
