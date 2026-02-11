@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.order.service;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
+import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateRequest;
@@ -9,15 +10,20 @@ import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
+import com.bootcamp.paymentdemo.domain.order.entity.OrderNumberSequence;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
+import com.bootcamp.paymentdemo.domain.order.repository.OrderNumberSequenceRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,30 +35,62 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final ProductOrderRepository productOrderRepository;
     private final MemberRepository memberRepository;
+    private final OrderNumberSequenceRepository orderNumberSequenceRepository;
 
-    // 구현 : 주문 생성, 목록 조회, 단건 조회
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
-        Member member = memberRepository.findById(request.getMemberId()).orElseThrow(
-            () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
+
+        // TODO : 코드 합치고 삭제
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
+                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
 
+        // 주문번호 생성
+        String dateSeq = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        OrderNumberSequence sequence = orderNumberSequenceRepository.findWithLockBySequenceDate(dateSeq)
+                .orElseGet(() -> orderNumberSequenceRepository.save(new OrderNumberSequence(dateSeq)));
+
+        String orderNumber = String.format("ORDER-%s-%06d", dateSeq, sequence.getLastNumber());
+
+        sequence.increment();
+
+        // TODO : 코드 합치고 삭제
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
-        for(OrderItemRequest item : request.getItems()) {
+        long totalQuantity = 0;
+
+        for (OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow(
                     () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT)
             );
+
+            // 재고 확인
+            if (product.getStock() < item.getQuantity()) {
+                throw new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT);
+            }
             calculateTotalAmount += product.getPrice() * item.getQuantity();
+            totalQuantity += item.getQuantity();
         }
+
+        // TODO : 코드 합치고 삭제
+        // 포인트 및 최종 결제 금액 계산
+        Grade grade = member.getGrade();
+
+        long usedPoints = 0;
+        long finalAmount = calculateTotalAmount - usedPoints;
+        long earnedPoints = (long) (finalAmount * (grade.getPointRate()/100.0));
 
         Order order = Order.register(
                 member
                 , calculateTotalAmount
-                , request.getUsedPoints()
-                , request.getFinalAmount()
-                , request.getEarnedPoints()
-                , request.getQuantity()
+                , usedPoints
+                , finalAmount
+                , earnedPoints
+                , totalQuantity
+                , orderNumber
         );
 
         Order savedOrder = orderRepository.save(order);
@@ -64,14 +102,15 @@ public class OrderService {
                     Product product = productRepository.findById(item.getProductId()).orElseThrow(
                             () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT));
 
-                    return  ProductOrder.register(
+                    return ProductOrder.register(
                             product
                             , savedOrder
-                            , item.getProductName()
-                            , item.getPrice()
+                            , product.getName()
+                            , product.getPrice()
                             , item.getQuantity()
                     );
-                        }) .collect (Collectors.toList());
+                })
+                .collect(Collectors.toList());
 
         productOrderRepository.saveAll(items);
 
