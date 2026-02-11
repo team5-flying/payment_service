@@ -76,6 +76,7 @@ public class Order extends Base {
         order.quantity = quantity;
         order.currency = "KRW";
         order.orderNumber = orderNumber;
+        order.orderAt = LocalDateTime.now();
         order.status = OrderStatus.PENDING;
         order.deleted = false;
         order.deletedAt = null;

@@ -30,7 +30,8 @@ public class Constants {
     // endregion
 
     // region 결제 관련 메세지
-    public static final String MSG_ALREADY_PAYMENT_COMPLETED = "이미 결제 확정 처리된 결제 건입니다";
+    public static final String MSG_NOT_ENOUGH_STOCK = "주문한 상품의 재고가 부족합니다";
+    public static final String MSG_NOT_ENOUGH_POINT = "주문 시 사용할 포인트 보다 보유한 포인트가 적습니다";
     // endregion
 
     // region 환불 관련 메세지

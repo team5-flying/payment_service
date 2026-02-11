@@ -1,10 +1,10 @@
 package com.bootcamp.paymentdemo.common.exception;
 
+import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import static com.bootcamp.paymentdemo.common.Constants.*;
-import static com.bootcamp.paymentdemo.common.Constants.MSG_ALREADY_PAYMENT_COMPLETED;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_FAIL;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_WRONG;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_NOT_FOUND_ORDER_PRODUCT;
@@ -38,7 +38,8 @@ public enum ErrorEnum {
     // endregion
 
     // region 결제 관련
-    ERR_ALREADY_PAYMENT_COMPLETED(HttpStatus.BAD_REQUEST, MSG_ALREADY_PAYMENT_COMPLETED),
+    ERR_NOT_ENOUGH_STOCK(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_STOCK),
+    ERR_NOT_ENOUGH_POINT(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_POINT),
     // endregion
 
     // region 환불 관련

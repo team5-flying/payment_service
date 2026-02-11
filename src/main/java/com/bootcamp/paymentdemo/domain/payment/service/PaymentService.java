@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
-import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.ERR_ALREADY_PAYMENT_COMPLETED;
 
 @Service
 @RequiredArgsConstructor
@@ -38,20 +37,22 @@ public class PaymentService {
 
     @Transactional
     public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
-        Order order = orderRepository.findById(Long.valueOf(request.getOrderId())).orElseThrow(
+        Order order = orderRepository.findByOrderIdAndDeletedFalse(Long.valueOf(request.getOrderId())).orElseThrow(
                 () -> new ServiceErrorException(ERR_NOT_FOUND_ORDER)
         );
+
+        List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(order);
 
         Payment payment = Payment.register(
                 order
                 , request.getTotalAmount()
         );
 
-        // 소모 포인트가 있을 경우 - 실 결제 금액 계산, 계산된 내역으로 포인트 적립
-        if(request.getPointsToUse() != null && request.getPointsToUse() > 0) {
-            order.updateUsedPoints(request.getPointsToUse());
-            order.updateEarnedPoints((long) Math.floor((order.getTotalAmount() - request.getPointsToUse()) * order.getMember().getGrade().getPointRate() * 0.01));
-        }
+        // 결제 시도 시점에서 검증
+        checkedValidation(payment, productOrderList);
+
+        order.updateUsedPoints(request.getPointsToUse());
+        order.updateEarnedPoints((long) Math.floor((order.getTotalAmount() - request.getPointsToUse()) * order.getMember().getGrade().getPointRate() * 0.01));
 
         // 기존 주문 건이 있을 경우 (결제 창 닫아 취소 했을 경우 해당 주문 건 재활용)
         Optional<Payment> setPayment = paymentRepository.findByOrderId(Long.valueOf(request.getOrderId()));
@@ -72,17 +73,19 @@ public class PaymentService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ConfirmPaymentResponse confirmPayment(String paymentId, String email) {
-        // TODO 실패의 경우?
         Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_MEMBER));
         Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
-        // 멱등성 검증 (이미 처리된 상태 일 경우 throw)
+        // 멱등성 검증
         if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
-            throw new ServiceErrorException(ERR_ALREADY_PAYMENT_COMPLETED);
+            return ConfirmPaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
+
+        // 확정 시점에서 검증
+        checkedValidation(payment, productOrderList);
 
         // 결제 확정 상태로 변경
         payment.updateStatus(PaymentStatus.COMPLETE);
@@ -91,7 +94,6 @@ public class PaymentService {
         payment.getOrder().updateStatus(OrderStatus.COMPLETE);
 
         // 재고 변경
-        // FIXME 주문을 확정하기 전에 상품의 재고가 모자란 경우가 분명히 발생 할 수 있음, 이 부분은 어떻게 제어할 것인지 생각
         for (ProductOrder productOrder : productOrderList) {
             productOrder.getProduct().updateStock(productOrder.getQuantity());
         }
@@ -113,5 +115,21 @@ public class PaymentService {
         }
 
         return ConfirmPaymentResponse.register(true, payment.getOrder().getOrderId().toString(), PaymentStatus.COMPLETE.name());
+    }
+
+    // 포인트 사용 검증, 주문 재고 검증
+    // 결제 시도, 결제 확정 시점 2가지에서 검증하도록 조치
+    private void checkedValidation(Payment payment, List<ProductOrder> productOrderList) {
+        if(payment.getOrder().getUsedPoints() > 0) {
+            if (payment.getOrder().getMember().getPoint() < payment.getOrder().getUsedPoints()) {
+                throw new ServiceErrorException(ERR_NOT_ENOUGH_POINT);
+            }
+        }
+
+        for (ProductOrder productOrder : productOrderList) {
+            if (productOrder.getProduct().getStock() < productOrder.getQuantity()) {
+                throw new ServiceErrorException(ERR_NOT_ENOUGH_STOCK);
+            }
+        }
     }
 }

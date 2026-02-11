@@ -16,7 +16,7 @@ public class OrderGetResponse extends Base {
     private Long memberId;
     private String orderNumber;
     private Long totalAmount;
-    private Long usePoints;
+    private Long usedPoints;
     private Long finalAmount;
     private Long earnedPoints;
     private String currency;
@@ -30,7 +30,7 @@ public class OrderGetResponse extends Base {
             Long memberId,
             String orderNumber,
             Long totalAmount,
-            Long usePoints,
+            Long usedPoints,
             Long finalAmount,
             Long earnedPoints,
             String currency,
@@ -43,7 +43,7 @@ public class OrderGetResponse extends Base {
         this.memberId = memberId;
         this.orderNumber = orderNumber;
         this.totalAmount = totalAmount;
-        this.usePoints = usePoints;
+        this.usedPoints = usedPoints;
         this.finalAmount = finalAmount;
         this.earnedPoints = earnedPoints;
         this.currency = currency;
