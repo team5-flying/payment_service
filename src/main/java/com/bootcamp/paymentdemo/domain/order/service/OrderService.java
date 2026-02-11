@@ -2,21 +2,19 @@ package com.bootcamp.paymentdemo.domain.order.service;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
-import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
-import com.bootcamp.paymentdemo.domain.order.dto.*;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateRequest;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,54 +29,30 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final ProductOrderRepository productOrderRepository;
     private final MemberRepository memberRepository;
-    private final EntityManager entityManager;
 
+    // 구현 : 주문 생성, 목록 조회, 단건 조회
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        Member member = memberRepository.findByEmail(email).orElseThrow(
-                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
+        Member member = memberRepository.findById(request.getMemberId()).orElseThrow(
+            () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
-
-        // 주문번호 생성 : 숫자에서 문자열로 받아오기
-        DatePrefixedSequenceIdGenerator generator = new DatePrefixedSequenceIdGenerator();
-        String orderNumberSeq = (String) generator.generate((SharedSessionContractImplementor) entityManager.getDelegate(), null);
 
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
-        long totalQuantity = 0;
-
-        for (OrderItemRequest item : request.getItems()) {
+        for(OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId()).orElseThrow(
                     () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT)
             );
-
-            // 재고 확인
-            if (product.getStock() < item.getQuantity()) {
-                throw new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT);
-            }
-
             calculateTotalAmount += product.getPrice() * item.getQuantity();
-            totalQuantity += item.getQuantity();
         }
-
-        // 포인트 및 최종 결제 금액 계산
-        Grade grade = member.getGrade();
-
-        long usedPoints = 0;
-        long finalAmount = calculateTotalAmount - usedPoints;
-        long earnedPoints = (int) (finalAmount * (grade.getPointRate()/100.0));
 
         Order order = Order.register(
                 member
                 , calculateTotalAmount
-                , usedPoints
-                , finalAmount
-                , earnedPoints
-                , totalQuantity
-                , "KRW"
-                , orderNumberSeq
+                , request.getUsedPoints()
+                , request.getFinalAmount()
+                , request.getEarnedPoints()
+                , request.getQuantity()
         );
 
         Order savedOrder = orderRepository.save(order);
@@ -90,14 +64,14 @@ public class OrderService {
                     Product product = productRepository.findById(item.getProductId()).orElseThrow(
                             () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT));
 
-                    return ProductOrder.register(
+                    return  ProductOrder.register(
                             product
                             , savedOrder
-                            , product.getName()
-                            , product.getPrice()
+                            , item.getProductName()
+                            , item.getPrice()
                             , item.getQuantity()
                     );
-                }).collect(Collectors.toList());
+                        }) .collect (Collectors.toList());
 
         productOrderRepository.saveAll(items);
 
