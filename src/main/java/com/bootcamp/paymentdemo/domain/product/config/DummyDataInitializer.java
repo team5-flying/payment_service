@@ -24,7 +24,6 @@ public class DummyDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // productRepository.deleteAll();
 
         if (productRepository.findAll().isEmpty()) {
             List<Product> products = new ArrayList<>();

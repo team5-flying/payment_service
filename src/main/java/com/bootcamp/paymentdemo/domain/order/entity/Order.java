@@ -8,9 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Getter
 @Entity
@@ -25,7 +23,7 @@ public class Order extends Base {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String orderNumber;
 
     @Column(nullable = false)
@@ -66,7 +64,6 @@ public class Order extends Base {
             Long finalAmount,
             Long earnedPoints,
             Long quantity,
-            String currency,
             String orderNumber
     ) {
         Order order = new Order();
