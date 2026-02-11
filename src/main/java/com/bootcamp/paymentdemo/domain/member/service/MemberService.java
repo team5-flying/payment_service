@@ -44,15 +44,67 @@ public class MemberService {
 
         // authentication 객체에서 MemberUserDetails 추출
         MemberUserDetails userDetails = (MemberUserDetails) authentication.getPrincipal();
+        Member member = userDetails.getMember();
 
-        // UserDetails로 토큰 생성
-        String token = jwtProvider.createToken(userDetails.getUsername(), userDetails.getMember().getRole());
+        // member로 accessToken, refreshToken 생성
+        String accessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole());
+        String refreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
-        return LoginInfo.register(userDetails.getMember(), token);
+        member.rotateRefreshToken(refreshToken);
+
+        return LoginInfo.register(userDetails.getMember(), accessToken, refreshToken);
+    }
+
+    @Transactional
+    public TokenPair refresh(String refreshTokenRaw) {
+        String refreshToken = getRefreshTokenByRaw(refreshTokenRaw);
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new ServiceErrorException(ErrorEnum.ERR_INVALID_TOKEN);
+        }
+
+        if (!jwtProvider.validateToken(refreshToken) || !jwtProvider.isRefreshToken(refreshToken)) {
+            throw new ServiceErrorException(ErrorEnum.ERR_INVALID_TOKEN);
+        }
+
+        String email = jwtProvider.getClaims(refreshToken).getSubject();
+
+        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
+                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
+        );
+
+        // DB에 저장된 refreshToken과 비교
+        if (member.getRefreshToken() == null || !member.getRefreshToken().equals(refreshToken)) {
+            // 탈취/로그아웃/회전된 토큰 등
+            throw new ServiceErrorException(ErrorEnum.ERR_INVALID_TOKEN);
+        }
+
+        // 토큰 회전(rotate): refresh도 새로 발급해서 탈취 대응
+        String newAccessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole());
+        String newRefreshToken = jwtProvider.createRefreshToken(member.getEmail());
+        member.rotateRefreshToken(newRefreshToken);
+
+        return TokenPair.register(newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public void logout(String email) {
+        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
+                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
+        );
+        member.clearRefreshToken();
     }
 
     @Transactional(readOnly = true)
     public SearchMemberResponse findOne(Member member) {
         return SearchMemberResponse.register(member);
+    }
+
+    private String getRefreshTokenByRaw(String refreshTokenRaw) {
+        if (refreshTokenRaw != null && refreshTokenRaw.startsWith("Bearer ")) {
+            return refreshTokenRaw.substring(7);
+        }
+
+        return null;
     }
 }

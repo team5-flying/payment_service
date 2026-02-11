@@ -12,9 +12,10 @@ public class LoginInfo {
     private final Boolean success;
     private final Long id;
     private final String email;
-    private final String token;
+    private final String accessToken;
+    private final String refreshToken;
 
-    public static LoginInfo register(Member member, String token) {
-        return new LoginInfo(true, member.getMemberId(), member.getEmail(), token);
+    public static LoginInfo register(Member member, String accessToken, String refreshToken) {
+        return new LoginInfo(true, member.getMemberId(), member.getEmail(), accessToken, refreshToken);
     }
 }

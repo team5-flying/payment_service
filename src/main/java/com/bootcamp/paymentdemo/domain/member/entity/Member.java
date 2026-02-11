@@ -111,4 +111,12 @@ public class Member extends Base {
         this.grade = grade;
         this.gradeAt = LocalDateTime.now();
     }
+
+    public void rotateRefreshToken(String refreshTokenHash) {
+        this.refreshToken = refreshTokenHash;
+    }
+
+    public void clearRefreshToken() {
+        this.refreshToken = null;
+    }
 }

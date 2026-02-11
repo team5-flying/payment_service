@@ -15,8 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.List;
-
 import static org.springframework.boot.security.autoconfigure.web.servlet.PathRequest.toStaticResources;
 
 /**
@@ -40,16 +38,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-//                // TODO : 테스트 오픈 - CORS 설정 추가, 삭제 필요
-//                .cors(cors -> cors.configurationSource(request -> {
-//                    var config = new org.springframework.web.cors.CorsConfiguration();
-//                    config.setAllowedOriginPatterns(List.of("*")); // 모든 도메인 허용 (테스트용)
-//                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-//                    config.setAllowedHeaders(List.of("*"));
-//                    config.setAllowCredentials(true);
-//                    return config;
-//                }))
-
             // CSRF 비활성화 (JWT 사용 시 불필요)
             .csrf(AbstractHttpConfigurer::disable)
 
@@ -74,7 +62,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 
                     // 4) 인증 API
-                    .requestMatchers(HttpMethod.POST, "/api/login", "/api/signup").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/login", "/api/signup", "/api/refresh").permitAll()
 
                     // 웹훅
                     .requestMatchers("/api/webhooks/**").permitAll()
