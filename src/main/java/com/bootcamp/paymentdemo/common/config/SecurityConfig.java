@@ -74,7 +74,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 
                     // 4) 인증 API
-                    .requestMatchers(HttpMethod.POST, "/api/login", "/api/signup").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/login", "/api/signup", "/api/refresh").permitAll()
 
                     // 웹훅
                     .requestMatchers("/api/webhooks/**").permitAll()

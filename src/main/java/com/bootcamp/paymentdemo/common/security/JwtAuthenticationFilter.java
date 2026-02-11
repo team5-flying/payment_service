@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.common.security;
 
+import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.service.MemberUserDetailsService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -31,13 +33,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
         try {
             // 1. Request Header에서 JWT 토큰 추출
             String token = getJwtFromRequest(request);
 
             // 2. 토큰 유효성 검증
             if (token != null && jwtProvider.validateToken(token)) {
+
+                // refresh token은 인증용이 아님
+                if (jwtProvider.isRefreshToken(token)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 // 3. 토큰에서 사용자 정보 추출
                 String email = jwtProvider.getClaims(token).getSubject();
 
@@ -62,6 +70,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (JwtException e) {
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않은 토큰입니다");
             return;
+        } catch (UsernameNotFoundException | ServiceErrorException e) {
+            // 토큰은 유효한데 회원이 없다(탈퇴/삭제/회전 등) -> 인증 실패
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "서버 오류");
             log.error(e.getMessage(), e);

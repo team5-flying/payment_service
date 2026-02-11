@@ -15,7 +15,8 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
-    private static final long EXPIRATION_TIME = 3 * 60 * 60 * 1000L; //3시간
+    private static final long ACCESS_EXP = 6 * 60 * 60 * 1000L; //3시간
+    private static final long REFRESH_EXP = 14 * 24 * 60 * 60 * 1000L; //3시간
 
 
     private final SecretKey secretKey;
@@ -25,15 +26,27 @@ public class JwtProvider {
     }
 
 
-    public String createToken(String email, MemberRole role) {
+    public String createAccessToken(String email, MemberRole role) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+        Date expiryDate = new Date(now.getTime() + ACCESS_EXP);
 
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role.name())
+                .claim("type", "ACCESS")
                 .issuedAt(now)
                 .expiration(expiryDate)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String createRefreshToken(String email) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(email)
+                .claim("type", "REFRESH")
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + REFRESH_EXP))
                 .signWith(secretKey)
                 .compact();
     }
@@ -44,6 +57,10 @@ public class JwtProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public boolean isRefreshToken(String token) {
+        return "REFRESH".equals(getClaims(token).get("type", String.class));
     }
 
     public boolean validateToken(String token) {

@@ -31,11 +31,29 @@ public class MemberController {
 
         // 로그인 info에서 토큰을 헤더에 담아 응답
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + info.getToken());
+        headers.set("Authorization", "Bearer " + info.getAccessToken());
+        headers.set("Refresh-Token", "Bearer " + info.getRefreshToken());
 
         // 로그인 info에서 로그인 정보를 토대로 response 객체 생성 후 응답
         LoginMemberResponse response = LoginMemberResponse.register(info);
         return ResponseEntity.ok().headers(headers).body(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Void> refresh(@RequestHeader("Refresh-Token") String refreshToken) {
+        TokenPair tokens = memberService.refresh(refreshToken);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + tokens.getAccessToken());
+        headers.set("Refresh-Token", "Bearer " + tokens.getRefreshToken());
+
+        return ResponseEntity.ok().headers(headers).build();
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal MemberUserDetails userDetails) {
+        memberService.logout(userDetails.getUsername());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/users")
