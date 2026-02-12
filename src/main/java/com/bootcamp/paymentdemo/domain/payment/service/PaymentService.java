@@ -2,7 +2,6 @@ package com.bootcamp.paymentdemo.domain.payment.service;
 
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
-import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
@@ -14,9 +13,8 @@ import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
-import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLog;
-import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLogStatus;
-import com.bootcamp.paymentdemo.domain.point.repository.MemberPointLogRepository;
+import com.bootcamp.paymentdemo.domain.payment.validator.PaymentValidator;
+import com.bootcamp.paymentdemo.domain.point.service.PointService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,112 +29,100 @@ import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
+
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
-    private final MemberRepository memberRepository;
     private final ProductOrderRepository productOrderRepository;
-    private final MemberPointLogRepository memberPointLogRepository;
 
+    private final PaymentValidator paymentValidator;
+    private final PointService pointService;
+
+    // 결제 시도
     @Transactional
     public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
-        Order order = orderRepository.findByOrderIdAndDeletedFalse(Long.valueOf(request.getOrderId())).orElseThrow(
-                () -> new ServiceErrorException(ERR_NOT_FOUND_ORDER)
-        );
-
+        // 주문 및 상품 정보 조회
+        Order order = orderRepository.findByOrderIdAndDeletedFalse(Long.valueOf(request.getOrderId()))
+                .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_ORDER));
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(order);
 
-        Payment payment = Payment.register(
-                order
-                , request.getTotalAmount()
-        );
+        // 검증 (재고, 포인트)
+        paymentValidator.validateForCreate(order.getMember(), request.getPointsToUse(), order, productOrderList);
 
-        // 결제 시도 시점에서 검증
-        checkedValidation(payment, productOrderList);
-
-        order.updateUsedPoints(request.getPointsToUse());
-        order.updateEarnedPoints((long) Math.floor((order.getTotalAmount() - request.getPointsToUse()) * order.getMember().getGrade().getPointRate() * 0.01));
-
-        // 기존 주문 건이 있을 경우 (결제 창 닫아 취소 했을 경우 해당 주문 건 재활용)
-        Optional<Payment> setPayment = paymentRepository.findByOrderId(Long.valueOf(request.getOrderId()));
-        if(setPayment.isPresent()) {
-            Payment existingPayment = setPayment.get();
+        // 기존 결제 확인 (결제 창 닫았다가 재시도한 경우)
+        Optional<Payment> existsPayment = paymentRepository.findByOrderId(Long.valueOf(request.getOrderId()));
+        if (existsPayment.isPresent()) {
+            Payment existingPayment = existsPayment.get();
             return CreatePaymentResponse.register(
-                    true
-                    , existingPayment.getPortOneId()
-                    , existingPayment.getStatus().name()
-            );
-        } else {
-            Payment savedPayment = paymentRepository.save(payment);
-            return CreatePaymentResponse.register(
-                    true
-                    , savedPayment.getPortOneId()
-                    , savedPayment.getStatus().name()
+                    true,
+                    existingPayment.getPortOneId(),
+                    existingPayment.getStatus().name()
             );
         }
+
+        // 결제 생성
+        Payment payment = Payment.register(order, request.getTotalAmount());
+
+        // 포인트 사용 시 주문 정보 업데이트
+        if (request.getPointsToUse() != null && request.getPointsToUse() > 0) {
+            order.updateUsedPoints(request.getPointsToUse());
+
+            Long earnedPoints = pointService.calculateEarnedPoints(
+                    order.getTotalAmount()
+                    , request.getPointsToUse()
+                    , order.getMember().getGrade().getPointRate()
+            );
+
+            order.updateEarnedPoints(earnedPoints);
+        }
+
+        // 결제 저장 및 응답
+        Payment savedPayment = paymentRepository.save(payment);
+        return CreatePaymentResponse.register(
+                true
+                , savedPayment.getPortOneId()
+                , savedPayment.getStatus().name()
+        );
     }
 
+    // 결제 확정
     @Transactional(rollbackFor = Exception.class)
-    public ConfirmPaymentResponse confirmPayment(String paymentId, String email) {
-        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_MEMBER));
-        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
+    public ConfirmPaymentResponse confirmPayment(String paymentId) {
+        // 결제 및 주문 상품 조회
+        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId)
+                .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
-        // 멱등성 검증
+        // 멱등성 검증 (이미 완료된 결제는 재처리 안함)
         if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
             return ConfirmPaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
 
-        // 확정 시점에서 검증
-        checkedValidation(payment, productOrderList);
+        Order order = payment.getOrder();
+        Member member = order.getMember();
 
-        // 결제 확정 상태로 변경
+        // 재고 및 포인트 재검증
+        paymentValidator.validateForConfirm(member, order, productOrderList);
+
+        // 결제 및 주문 상태 변경
         payment.updateStatus(PaymentStatus.COMPLETE);
+        order.updateStatus(OrderStatus.COMPLETE);
 
-        // 주문 확정 상태로 변경
-        payment.getOrder().updateStatus(OrderStatus.COMPLETE);
-
-        // 재고 변경
+        // 재고 차감
         for (ProductOrder productOrder : productOrderList) {
             productOrder.getProduct().updateStock(productOrder.getQuantity());
         }
 
-        // 고객 누적 구매금액 반영
+        // 회원 구매금액 누적
         // FIXME 누적 구매금액 적용할 때 등급 반영 로직 추가되어야함
         member.addTotalPriceAmount(payment.getPriceSnap());
 
-        try {
-            // 고객 포인트 적립, 포인트 적립 이력 생성
-            member.addPoint(payment.getOrder().getEarnedPoints());
-            MemberPointLog savedSavePointLog = MemberPointLog.create(payment.getOrder().getOrderNumber(), payment.getOrder().getEarnedPoints(), MemberPointLogStatus.SAVE, member);
-            memberPointLogRepository.save(savedSavePointLog);
+        // 포인트 적립 및 차감 처리
+        pointService.processPointInOrder(member, order);
 
-            // 고객 포인트 소모, 포인트 소모 이력 생성
-            if (payment.getOrder().getUsedPoints() > 0) {
-                member.minusPoint(payment.getOrder().getUsedPoints());
-                MemberPointLog savedUsePointLog = MemberPointLog.create(payment.getOrder().getOrderNumber(), payment.getOrder().getUsedPoints(), MemberPointLogStatus.USE, member);
-                memberPointLogRepository.save(savedUsePointLog);
-            }
-        } catch (Exception e) {
-            log.error("포인트 로그 저장 실패 : {}", e.getMessage());
-            throw new ServiceErrorException(ERR_SAVED_DATA_FAILED);
-        }
-
-        return ConfirmPaymentResponse.register(true, payment.getOrder().getOrderId().toString(), PaymentStatus.COMPLETE.name());
-    }
-
-    // 포인트 사용 검증, 주문 재고 검증
-    // 결제 시도, 결제 확정 시점 2가지에서 검증하도록 조치
-    private void checkedValidation(Payment payment, List<ProductOrder> productOrderList) {
-        if(payment.getOrder().getUsedPoints() > 0) {
-            if (payment.getOrder().getMember().getPoint() < payment.getOrder().getUsedPoints()) {
-                throw new ServiceErrorException(ERR_NOT_ENOUGH_POINT);
-            }
-        }
-
-        for (ProductOrder productOrder : productOrderList) {
-            if (productOrder.getProduct().getStock() < productOrder.getQuantity()) {
-                throw new ServiceErrorException(ERR_NOT_ENOUGH_STOCK);
-            }
-        }
+        return ConfirmPaymentResponse.register(
+                true,
+                order.getOrderId().toString(),
+                PaymentStatus.COMPLETE.name()
+        );
     }
 }
