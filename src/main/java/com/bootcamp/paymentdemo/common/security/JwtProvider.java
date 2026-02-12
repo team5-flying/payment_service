@@ -10,12 +10,13 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 @Component
 public class JwtProvider {
 
-    private static final long ACCESS_EXP = 6 * 60 * 60 * 1000L; //3시간
+    private static final long ACCESS_EXP = 6 * 60 * 60 * 1000L; //6시간
     private static final long REFRESH_EXP = 14 * 24 * 60 * 60 * 1000L; //3시간
 
 
@@ -32,6 +33,7 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(email)
+                .id(UUID.randomUUID().toString()) //jti
                 .claim("role", role.name())
                 .claim("type", "ACCESS")
                 .issuedAt(now)
@@ -44,6 +46,7 @@ public class JwtProvider {
         Date now = new Date();
         return Jwts.builder()
                 .subject(email)
+                .id(UUID.randomUUID().toString()) // jti
                 .claim("type", "REFRESH")
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + REFRESH_EXP))
