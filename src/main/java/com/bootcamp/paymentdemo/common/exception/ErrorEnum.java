@@ -1,12 +1,10 @@
 package com.bootcamp.paymentdemo.common.exception;
 
-import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import static com.bootcamp.paymentdemo.common.Constants.*;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_ALREADY_CANCELLED;
-import static com.bootcamp.paymentdemo.common.Constants.MSG_ALREADY_PAYMENT_COMPLETED;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_FAIL;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_WRONG;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_FAIL_REFUND;
@@ -49,15 +47,13 @@ public enum ErrorEnum {
 
     // region 환불 관련
     ERR_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PAYMENT),
-    ERR_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, MSG_ALREADY_REFUNDED),
-    ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
-    // endregion
-
-    // region 서버 관련
-    ERR_SAVED_DATA_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, MSG_DATA_INSERT_FAIL);
     ERR_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, MSG_ALREADY_CANCELLED),
     ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
     ERR_FAIL_REFUND(HttpStatus.BAD_REQUEST, MSG_FAIL_REFUND),
+    // endregion
+
+    // region 서버 관련
+    ERR_SAVED_DATA_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, MSG_DATA_INSERT_FAIL),
     // endregion
 
     // region 웹훅 관련
