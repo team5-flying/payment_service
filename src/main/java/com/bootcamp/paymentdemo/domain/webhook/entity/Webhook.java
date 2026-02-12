@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "webhook_events", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_webhook_event_rec_webhook_id", columnNames = {"rec_webhook_id"})
+        @UniqueConstraint(name = "uk_webhook_event_rec_webhook_id", columnNames = {"rec_webhook_id"})
 })
 public class Webhook {
     @Id

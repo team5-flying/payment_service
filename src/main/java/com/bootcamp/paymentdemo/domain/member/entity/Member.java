@@ -93,6 +93,7 @@ public class Member extends Base {
         if (this.totalPriceAmount == null) {
             this.totalPriceAmount = 0L;
         }
+
         this.totalPriceAmount += amount;
     }
 

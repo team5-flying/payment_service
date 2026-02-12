@@ -11,6 +11,7 @@ import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderNumberSequence;
+import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderNumberSequenceRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
@@ -40,7 +41,6 @@ public class OrderService {
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
 
-        // TODO : 코드 합치고 삭제
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
@@ -57,7 +57,6 @@ public class OrderService {
 
         sequence.increment();
 
-        // TODO : 코드 합치고 삭제
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
         long totalQuantity = 0;
@@ -75,7 +74,6 @@ public class OrderService {
             totalQuantity += item.getQuantity();
         }
 
-        // TODO : 코드 합치고 삭제
         // 포인트 및 최종 결제 금액 계산
         Grade grade = member.getGrade();
 
@@ -166,5 +164,18 @@ public class OrderService {
                 , order.isDeleted()
                 , order.getDeletedAt()
         );
+    }
+
+    @Transactional
+    public void completeOrder(String orderNumber) {
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_ORDER));
+
+        // 중복 처리 방지
+        if (order.getStatus() == OrderStatus.COMPLETE) {
+            return;
+        }
+
+        order.updateStatus(OrderStatus.COMPLETE);
     }
 }

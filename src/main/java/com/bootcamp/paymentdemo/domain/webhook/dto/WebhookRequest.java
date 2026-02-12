@@ -8,7 +8,27 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WebhookRequest {
 
-    private String payment_id;
-    private String status;
-    private String event_type;
+    private String type;
+    private String timestamp;
+    private Data data;
+
+    @Getter
+    @NoArgsConstructor
+    public static class Data {
+        private String transactionId;
+        private String paymentId;
+        private String storeId;
+    }
+
+    public String getPaymentId() {
+        return (data != null) ? data.getPaymentId() : null;
+    }
+
+    public String getStatus() {
+        if (type.contains("Paid")) return "PAID";
+        if (type.contains("Cancelled")) return "CANCELLED";
+        if (type.contains("Failed")) return "FAILED";
+
+        return type;
+    }
 }
