@@ -45,6 +45,10 @@ public class Payment extends Base {
     private Boolean deleted;
     private LocalDateTime deletedAt;
 
+    // 재처리 중복 시도시 올바른 상황 (멱등성 검증으로 처리되도록)을 만들기 위해 낙관적 락
+    @Version
+    private Long version;
+
     public static Payment register(Order order, Long priceSnap) {
         Payment payment = new Payment();
         payment.order = order;

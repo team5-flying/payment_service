@@ -41,7 +41,7 @@ public class RefundService {
             return;
         }
 
-//        validateRefundAvailability(payment);
+        validateRefundAvailability(payment);
 
         Order order = payment.getOrder();
         Member member = order.getMember();
