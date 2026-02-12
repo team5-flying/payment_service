@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.domain.webhook.service;
 import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
+import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.service.OrderService;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
@@ -87,6 +88,8 @@ public class WebhookService {
                 Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(portOneId)
                         .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
                 payment.updateStatus(PaymentStatus.FAIL);
+                Order order = payment.getOrder();
+                order.updateStatus(OrderStatus.PENDING);
             }
 
             webhook.complete();

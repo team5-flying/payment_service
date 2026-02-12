@@ -43,6 +43,7 @@ public enum ErrorEnum {
     // region 결제 관련
     ERR_NOT_ENOUGH_STOCK(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_STOCK),
     ERR_NOT_ENOUGH_POINT(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_POINT),
+    ERR_ZERO_ACTUAL_PRICE(HttpStatus.CONFLICT, MSG_ZERO_ACTUAL_PRICE),
     // endregion
 
     // region 환불 관련
