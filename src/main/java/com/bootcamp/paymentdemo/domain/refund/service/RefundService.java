@@ -5,60 +5,72 @@ import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
-import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
+import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
+import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLog;
 import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLogStatus;
 import com.bootcamp.paymentdemo.domain.point.repository.MemberPointLogRepository;
-import com.bootcamp.paymentdemo.domain.refund.entity.Refund;
-import com.bootcamp.paymentdemo.domain.refund.entity.RefundStatus;
-import com.bootcamp.paymentdemo.domain.refund.repository.RefundRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RefundService {
-
-    private final RefundRepository refundRepository;
     private final PaymentRepository paymentRepository;
     private final MemberPointLogRepository memberPointLogRepository;
-    private final OrderRepository orderRepository;
+    private final ProductOrderRepository productOrderRepository;
 
-    @Transactional
-    public void processRefund(String paymentId) {
-        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void processRefund(String portOneId) {
+        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(portOneId)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
+
+        if (payment.getStatus() == PaymentStatus.CANCELLED) {
+            log.info("이미 취소된 결제입니다. portOneId: {}", portOneId);
+            return;
+        }
+
+//        validateRefundAvailability(payment);
+
         Order order = payment.getOrder();
         Member member = order.getMember();
 
-        validateRefundAvailability(payment);
-
-        // 환불 기록 및 상태 변경
-        Refund refund = Refund.register(payment, payment.getPriceSnap(), RefundStatus.REFUNDED, "웹훅 취소");
-        refundRepository.save(refund);
-
-        payment.updateStatus(PaymentStatus.REFUNDED);
-        order.updateStatus(OrderStatus.REFUNDED);
+        // 상태 변경
+        payment.updateStatus(PaymentStatus.CANCELLED);
+        order.updateStatus(OrderStatus.CANCELLED);
 
         // 누적 결제 금액 차감
-        member.subtractTotalPriceAmount(order.getFinalAmount());
+        if (payment.getPriceSnap() != null) {
+            member.subtractTotalPriceAmount(order.getFinalAmount());
+        }
 
-        // 등급 재계산 호출
-        updateMemberGrade(member);
-
-        // 포인트 복구
+        // 등급 재계산
+        Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
+        member.updateGrade(newGrade);
         handlePointRefund(member, order);
+
+        // 재고 복구
+        List<ProductOrder> productOrders = productOrderRepository.findByOrderAndDeletedFalse(order);
+        for (ProductOrder po : productOrders) {
+            // 주문 시 소모했던 수량(positive)을 빼기 위해 음수(-) 전달
+            po.getProduct().updateStock(-po.getQuantity());
+        }
     }
 
     private void validateRefundAvailability(Payment payment) {
-        if (payment.getStatus() == PaymentStatus.REFUNDED) {
-            throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_REFUNDED);
+        if (payment.getStatus() == PaymentStatus.CANCELLED) {
+            throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_CANCELLED);
         }
 
         if (payment.getStatus() != PaymentStatus.COMPLETE) {
@@ -66,22 +78,19 @@ public class RefundService {
         }
     }
 
-    public void updateMemberGrade(Member member) {
-        Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
-        member.updateGrade(newGrade);
-    }
-
     private void handlePointRefund(Member member, Order order) {
-        // 포인트 복구
+        // 사용 포인트 돌려주기
         if (order.getUsedPoints() > 0) {
             member.addPoint(order.getUsedPoints());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
+            memberPointLogRepository.save(MemberPointLog.create(
+                    order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
         }
 
-        // 적립 취소
+        // 적립 포인트 취소(회수)
         if (order.getEarnedPoints() > 0) {
             member.minusPoint(order.getEarnedPoints());
-            memberPointLogRepository.save(MemberPointLog.create(order.getOrderNumber(), order.getEarnedPoints(), MemberPointLogStatus.CANCEL_EARN, member));
+            memberPointLogRepository.save(MemberPointLog.create(
+                    order.getOrderNumber(), order.getEarnedPoints(), MemberPointLogStatus.CANCEL_EARN, member));
         }
     }
 }
