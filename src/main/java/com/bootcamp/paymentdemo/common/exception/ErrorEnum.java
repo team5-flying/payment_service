@@ -4,13 +4,17 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import static com.bootcamp.paymentdemo.common.Constants.*;
+import static com.bootcamp.paymentdemo.common.Constants.MSG_ALREADY_CANCELLED;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_ALREADY_PAYMENT_COMPLETED;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_FAIL;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_WRONG;
+import static com.bootcamp.paymentdemo.common.Constants.MSG_FAIL_REFUND;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_NOT_FOUND_ORDER_PRODUCT;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_NOT_MATCH_LOGIN;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_TOKEN_EMPTY;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_TOKEN_EXPIRE;
+import static com.bootcamp.paymentdemo.common.Constants.MSG_WEBHOOK_INVALID_SIGNATURE;
+import static com.bootcamp.paymentdemo.common.Constants.MSG_WEBHOOK_NOT_FOUND_PAYMENT;
 
 @Getter
 public enum ErrorEnum {
@@ -43,8 +47,14 @@ public enum ErrorEnum {
 
     // region 환불 관련
     ERR_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PAYMENT),
-    ERR_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, MSG_ALREADY_REFUNDED),
-    ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS);
+    ERR_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, MSG_ALREADY_CANCELLED),
+    ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
+    ERR_FAIL_REFUND(HttpStatus.BAD_REQUEST, MSG_FAIL_REFUND),
+    // endregion
+
+    // region 웹훅 관련
+    ERR_WEBHOOK_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_WEBHOOK_NOT_FOUND_PAYMENT),
+    ERR_WEBHOOK_INVALID_SIGNATURE(HttpStatus.BAD_REQUEST, MSG_WEBHOOK_INVALID_SIGNATURE);
     // endregion
 
     private final HttpStatus status;

@@ -57,5 +57,4 @@ public class Refund extends Base {
         deleted = false;
         deletedAt = null;
     }
-
 }
