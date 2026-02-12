@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.common.exception;
 
+import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
@@ -42,11 +43,18 @@ public enum ErrorEnum {
     // endregion
 
     // region 결제 관련
-    ERR_ALREADY_PAYMENT_COMPLETED(HttpStatus.BAD_REQUEST, MSG_ALREADY_PAYMENT_COMPLETED),
+    ERR_NOT_ENOUGH_STOCK(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_STOCK),
+    ERR_NOT_ENOUGH_POINT(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_POINT),
     // endregion
 
     // region 환불 관련
     ERR_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PAYMENT),
+    ERR_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, MSG_ALREADY_REFUNDED),
+    ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
+    // endregion
+
+    // region 서버 관련
+    ERR_SAVED_DATA_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, MSG_DATA_INSERT_FAIL);
     ERR_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, MSG_ALREADY_CANCELLED),
     ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
     ERR_FAIL_REFUND(HttpStatus.BAD_REQUEST, MSG_FAIL_REFUND),

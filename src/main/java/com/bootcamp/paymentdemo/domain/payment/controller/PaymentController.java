@@ -5,6 +5,7 @@ import com.bootcamp.paymentdemo.domain.payment.dto.ConfirmPaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentRequest;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
+import jakarta.validation.Valid;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
 import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
@@ -24,19 +25,18 @@ public class PaymentController {
     private final PortOneService portOneService;
     private final RefundService refundService;
 
-    //TODO Valid 처리는 어느정도 완성 이후 적용 예정
     @PostMapping
-    public ResponseEntity<BaseResponse<CreatePaymentResponse>> createPayment(@RequestBody CreatePaymentRequest request) {
+    public ResponseEntity<BaseResponse<CreatePaymentResponse>> createPayment(
+            @Valid @RequestBody CreatePaymentRequest request
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), null, paymentService.createPayment(request)));
     }
 
     @PostMapping("/{paymentId}/confirm")
     public ResponseEntity<BaseResponse<ConfirmPaymentResponse>> confirmPayment(
             @PathVariable String paymentId
-            , @AuthenticationPrincipal UserDetails loginMemberInfo
     ) {
-        String email = loginMemberInfo.getUsername();
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), null, paymentService.confirmPayment(paymentId, email)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), null, paymentService.confirmPayment(paymentId)));
     }
 
     @PostMapping("/{paymentId}/cancel")
