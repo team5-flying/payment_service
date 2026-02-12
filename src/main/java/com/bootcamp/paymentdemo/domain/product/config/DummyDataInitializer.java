@@ -23,6 +23,7 @@ public class DummyDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        productRepository.deleteAll();
 
         if (productRepository.findAll().isEmpty()) {
             List<Product> products = new ArrayList<>();
@@ -36,8 +37,10 @@ public class DummyDataInitializer implements CommandLineRunner {
                     "거위털 롱패딩", "CLOTH", "러시아에서도 버틸 수 있는 따뜻한 롱패딩", 2000L, 10L, ProductStatus.SALES));
             products.add(Product.register(
                     "샘성 노트북", "ELECTRONIC", "신기술 탑재 2026 신상 노트북", 2500L, 10L, ProductStatus.SALES));
-
+            products.add(Product.register(
+                    "테스트", "테스트제품", "테스트 제품입니다", 1000L, 100L, ProductStatus.SALES));
             productRepository.saveAll(products);
         }
+
     }
 }

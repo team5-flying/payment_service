@@ -36,14 +36,20 @@ public class Constants {
 
     // region 환불 관련 메세지
     public static final String MSG_NOT_FOUND_PAYMENT = "존재하지 않는 결제 정보입니다";
-    public static final String MSG_ALREADY_REFUNDED = "이미 환불 처리된 결제입니다";
+    public static final String MSG_ALREADY_CANCELLED = "이미 환불로 취소된 결제입니다";
     public static final String MSG_INVALID_REFUND_STATUS = "환불 가능한 결제 상태가 아닙니다";
+    public static final String MSG_FAIL_REFUND = "포트원 결제 취소 요청이 실패했습니다";
     // endregion
 
     // region 서버 관련 메세지
     public static final String MSG_NOT_VALID_VALUE = "유효하지 않은 값이 입력되었습니다";
     public static final String MSG_DATA_INSERT_FAIL = "데이터 등록에 실패하였습니다";
     public static final String MSG_SERVER_ERROR_OCCUR = "서버 오류가 발생하였습니다, 잠시 후 다시 시도 바랍니다";
+    // endregion
+
+    // region 웹훅 관련 메시지
+    public static final String MSG_WEBHOOK_NOT_FOUND_PAYMENT = "포트원 결제 정보 조회 실패";
+    public static final String MSG_WEBHOOK_INVALID_SIGNATURE = "웹훅 시그니처가 일치하지 않습니다";
     // endregion
 }
 

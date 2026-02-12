@@ -86,7 +86,7 @@ public class Order extends Base {
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
-        if (status == OrderStatus.REFUNDED) {
+        if(status == OrderStatus.CANCELLED) {
             this.deleted = true;
             this.deletedAt = LocalDateTime.now();
         }
@@ -102,6 +102,11 @@ public class Order extends Base {
     public void updateUsedPoints(Long usedPoints) {
         this.usedPoints = usedPoints;
         this.finalAmount = totalAmount - usedPoints;
+    }
+
+    // 실 결제 금액 업데이트
+    public void updateFinalAmount(Long actualPrice) {
+        this.finalAmount = actualPrice;
     }
 
 }
