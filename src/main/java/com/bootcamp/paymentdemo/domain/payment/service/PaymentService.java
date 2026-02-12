@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.domain.payment.service;
 
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
+import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
@@ -48,20 +49,6 @@ public class PaymentService {
         // 검증 (재고, 포인트)
         paymentValidator.validateForCreate(order.getMember(), request.getPointsToUse(), order, productOrderList);
 
-        // 기존 결제 확인 (결제 창 닫았다가 재시도한 경우)
-        Optional<Payment> existsPayment = paymentRepository.findByOrderId(Long.valueOf(request.getOrderId()));
-        if (existsPayment.isPresent()) {
-            Payment existingPayment = existsPayment.get();
-            return CreatePaymentResponse.register(
-                    true,
-                    existingPayment.getPortOneId(),
-                    existingPayment.getStatus().name()
-            );
-        }
-
-        // 결제 생성
-        Payment payment = Payment.register(order, request.getTotalAmount());
-
         // 포인트 사용 시 주문 정보 업데이트
         if (request.getPointsToUse() != null && request.getPointsToUse() > 0) {
             order.updateUsedPoints(request.getPointsToUse());
@@ -75,7 +62,19 @@ public class PaymentService {
             order.updateEarnedPoints(earnedPoints);
         }
 
-        // 결제 저장 및 응답
+        // 기존 결제 확인 (결제 창 닫았다가 재시도한 경우)
+        Optional<Payment> existsPayment = paymentRepository.findByOrderId(Long.valueOf(request.getOrderId()));
+        if (existsPayment.isPresent()) {
+            Payment existingPayment = existsPayment.get();
+            return CreatePaymentResponse.register(
+                    true,
+                    existingPayment.getPortOneId(),
+                    existingPayment.getStatus().name()
+            );
+        }
+
+        // 결제 생성, 저장, 응답
+        Payment payment = Payment.register(order, request.getTotalAmount());
         Payment savedPayment = paymentRepository.save(payment);
         return CreatePaymentResponse.register(
                 true
@@ -112,12 +111,13 @@ public class PaymentService {
             productOrder.getProduct().updateStock(productOrder.getQuantity());
         }
 
-        // 회원 구매금액 누적
-        // FIXME 누적 구매금액 적용할 때 등급 반영 로직 추가되어야함
-        member.addTotalPriceAmount(payment.getPriceSnap());
-
         // 포인트 적립 및 차감 처리
         pointService.processPointInOrder(member, order);
+
+        // 회원 구매금액 누적, 등급 변경
+        member.addTotalPriceAmount(payment.getPriceSnap());
+        Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
+        member.updateGrade(newGrade);
 
         return ConfirmPaymentResponse.register(
                 true,

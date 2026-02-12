@@ -27,6 +27,7 @@ public class WebhookRequest {
     public String getStatus() {
         if (type.contains("Paid")) return "PAID";
         if (type.contains("Cancelled")) return "CANCELLED";
+        if (type.contains("Failed")) return "FAILED";
 
         return type;
     }

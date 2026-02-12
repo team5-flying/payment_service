@@ -23,8 +23,6 @@ public class DummyDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        productRepository.deleteAll();
-
         if (productRepository.findAll().isEmpty()) {
             List<Product> products = new ArrayList<>();
 
@@ -41,6 +39,5 @@ public class DummyDataInitializer implements CommandLineRunner {
                     "테스트", "테스트제품", "테스트 제품입니다", 1000L, 100L, ProductStatus.SALES));
             productRepository.saveAll(products);
         }
-
     }
 }
