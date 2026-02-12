@@ -59,6 +59,10 @@ public class Member extends Base {
 
     private String refreshToken;
 
+    private String refreshJti;
+
+    private LocalDateTime refreshExpiresAt;
+
     public static Member register(SaveMemberRequest request, String encodedPassword) {
         Member member = new Member();
         member.name = request.getName();
@@ -112,11 +116,15 @@ public class Member extends Base {
         this.gradeAt = LocalDateTime.now();
     }
 
-    public void rotateRefreshToken(String refreshTokenHash) {
+    public void rotateRefreshToken(String refreshTokenHash, String refreshJti, LocalDateTime refreshExpiresAt) {
         this.refreshToken = refreshTokenHash;
+        this.refreshJti = refreshJti;
+        this.refreshExpiresAt = refreshExpiresAt;
     }
 
     public void clearRefreshToken() {
         this.refreshToken = null;
+        this.refreshJti = null;
+        this.refreshExpiresAt = null;
     }
 }

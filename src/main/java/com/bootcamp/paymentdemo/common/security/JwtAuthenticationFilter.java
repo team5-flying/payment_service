@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.common.security;
 
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
+import com.bootcamp.paymentdemo.domain.member.service.AccessTokenBlacklistService;
 import com.bootcamp.paymentdemo.domain.member.service.MemberUserDetailsService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -8,6 +9,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,15 +21,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final MemberUserDetailsService userDetailsService;
-
-    public JwtAuthenticationFilter(JwtProvider jwtProvider, MemberUserDetailsService userDetailsService) {
-        this.jwtProvider = jwtProvider;
-        this.userDetailsService =  userDetailsService;
-    }
+    private final AccessTokenBlacklistService accessTokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -44,9 +43,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
+                // access token 블랙리스트 체크
+                String jti = jwtProvider.getClaims(token).getId();
+                if (accessTokenBlacklistService.isBlacklisted(jti)) {
+                    sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "로그아웃된 토큰입니다");
+                    return;
+                }
+
                 // 3. 토큰에서 사용자 정보 추출
                 String email = jwtProvider.getClaims(token).getSubject();
-
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 // 4. 인증 객체 생성
