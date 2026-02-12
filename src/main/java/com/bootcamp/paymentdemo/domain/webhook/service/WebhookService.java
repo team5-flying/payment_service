@@ -5,6 +5,7 @@ import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.service.OrderService;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
+import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
 import com.bootcamp.paymentdemo.domain.webhook.dto.WebhookRequest;
@@ -81,7 +82,13 @@ public class WebhookService {
                         throw e;
                     }
                 }
+            } else if ("FAILED".equals(request.getStatus())) {
+                // 결제 실패시 결제 상태는 FAIL 로 변경
+                Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(portOneId)
+                        .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
+                payment.updateStatus(PaymentStatus.FAIL);
             }
+
             webhook.complete();
         } catch (Exception e) {
             log.error("웹훅 처리 중 오류 발생", e);

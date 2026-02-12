@@ -41,7 +41,6 @@ public class OrderService {
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
 
-        // TODO : 코드 합치고 삭제
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
@@ -58,7 +57,6 @@ public class OrderService {
 
         sequence.increment();
 
-        // TODO : 코드 합치고 삭제
         // 서버측 총액 계산 한번 더 진행 (보안)
         long calculateTotalAmount = 0;
         long totalQuantity = 0;
@@ -76,7 +74,6 @@ public class OrderService {
             totalQuantity += item.getQuantity();
         }
 
-        // TODO : 코드 합치고 삭제
         // 포인트 및 최종 결제 금액 계산
         Grade grade = member.getGrade();
 
