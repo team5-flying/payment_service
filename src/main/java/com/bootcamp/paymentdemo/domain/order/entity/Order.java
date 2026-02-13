@@ -86,10 +86,12 @@ public class Order extends Base {
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
-        if(status == OrderStatus.CANCELLED) {
-            this.deleted = true;
-            this.deletedAt = LocalDateTime.now();
-        }
+
+        // TODO 필요 없으면 삭제
+        //if(status == OrderStatus.CANCELLED) {
+        //    this.deleted = true;
+        //    this.deletedAt = LocalDateTime.now();
+        //}
     }
 
     // 포인트 적립 업데이트
