@@ -168,7 +168,7 @@ public class OrderService {
 
     @Transactional
     public void completeOrder(String orderNumber) {
-        Order order = orderRepository.findByOrderNumber(orderNumber)
+        Order order = orderRepository.findByOrderNumberAndDeletedFalse(orderNumber)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_ORDER));
 
         // 중복 처리 방지

@@ -19,7 +19,6 @@ import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
 @Component
 @RequiredArgsConstructor
 public class PaymentValidator {
-    private final PortOneService portOneService;
     private final ProductRepository productRepository;
 
     // 결제 시도 검증

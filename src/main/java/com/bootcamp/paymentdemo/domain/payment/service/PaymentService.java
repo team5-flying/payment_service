@@ -90,7 +90,7 @@ public class PaymentService {
     }
 
     // 결제 확정
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional
     public ConfirmPaymentResponse confirmPayment(String paymentId) {
         // 결제 및 주문 상품 조회
         Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId)
@@ -126,11 +126,12 @@ public class PaymentService {
             member.addTotalPriceAmount(payment.getPriceSnap());
             Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
             member.updateGrade(newGrade);
-        } catch (Exception e) {
+        }  catch (Exception e) {
             log.error("결제 확정 진행 중 오류 : {}", e.getMessage());
-            portOneService.cancelPayment(paymentId, "결제 확정 진행 중 오류 발생");
+            portOneService.cancelPayment(paymentId, "결제 확정 진행 중 오류 발생 : " + e.getMessage());
             payment.updateStatus(PaymentStatus.FAIL);
-            order.updateStatus(OrderStatus.PENDING);
+            order.updateStatus(OrderStatus.CANCELLED);
+
             return ConfirmPaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
         }
 
