@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum OrderStatus {
     PENDING
+    , PAID
     , COMPLETE
     , CANCELLED
+    , FAIL
 }
