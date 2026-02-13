@@ -166,16 +166,19 @@ public class OrderService {
         );
     }
 
+    /*
+    // TODO 필요 없으면 삭제
     @Transactional
-    public void completeOrder(String orderNumber) {
+    public void paidOrder(String orderNumber) {
         Order order = orderRepository.findByOrderNumberAndDeletedFalse(orderNumber)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_ORDER));
 
-        // 중복 처리 방지
+        // 완료된 주문에 대한 중복 처리 방지
         if (order.getStatus() == OrderStatus.COMPLETE) {
             return;
         }
 
-        order.updateStatus(OrderStatus.COMPLETE);
+        order.updateStatus(OrderStatus.PAID);
     }
+    */
 }
