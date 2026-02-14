@@ -8,6 +8,7 @@ import com.bootcamp.paymentdemo.domain.order.service.OrderService;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
+import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
 import com.bootcamp.paymentdemo.domain.webhook.dto.WebhookRequest;
 import com.bootcamp.paymentdemo.domain.webhook.entity.Webhook;
@@ -26,9 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class WebhookService {
     private final WebhookRepository webhookRepository;
     private final PortOneService portOneService;
-    private final OrderService orderService;
-    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
     private final RefundService refundService;
+    private final PaymentRepository paymentRepository;
 
     @Value("${portone.api.webhook-secret}")
     private String webhookSecret;
@@ -43,7 +44,7 @@ public class WebhookService {
 
         if (!signature.contains(",") && !signature.equals(webhookSecret)) {
             log.error("웹훅 시그니처 형식이 잘못되었거나 불일치합니다. ID: {}", recWebhookId);
-            // throw new ServiceErrorException(ErrorEnum.ERR_WEBHOOK_INVALID_SIGNATURE); // 일단 주석 처리하여 통과 확인
+            throw new ServiceErrorException(ErrorEnum.ERR_WEBHOOK_INVALID_SIGNATURE);
         } else {
             log.info("웹훅 보안 검증 통과 (또는 테스트 모드)");
         }
@@ -68,8 +69,10 @@ public class WebhookService {
                         .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
 
                 Order order = payment.getOrder();
+
                 if (actualAmount == order.getFinalAmount()) {
-                    orderService.completeOrder(order.getOrderNumber());
+                    //orderService.paidOrder(order.getOrderNumber());
+                    paymentService.confirmPayment(portOneId);
                 }
             } else if ("CANCELLED".equals(request.getStatus())) {
                 try {
@@ -84,10 +87,11 @@ public class WebhookService {
                     }
                 }
             } else if ("FAILED".equals(request.getStatus())) {
-                // 결제 실패시 결제 상태는 FAIL 로 변경
+                // 결제 실패 상태 수신시 결제 상태는 FAIL 로 변경
                 Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(portOneId)
                         .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
                 payment.updateStatus(PaymentStatus.FAIL);
+
                 Order order = payment.getOrder();
                 order.updateStatus(OrderStatus.PENDING);
             }

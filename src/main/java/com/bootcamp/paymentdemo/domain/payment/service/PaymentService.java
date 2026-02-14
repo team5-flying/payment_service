@@ -136,7 +136,9 @@ public class PaymentService {
             log.error("결제 확정 진행 중 오류 : {}", e.getMessage());
             portOneService.cancelPayment(paymentId, "결제 확정 진행 중 오류 발생 : " + e.getMessage());
             payment.updateStatus(PaymentStatus.FAIL);
-            order.updateStatus(OrderStatus.CANCELLED);
+
+            // PaymentId 가 기록된 채로 실패한 경우, 재시도가 불가함 (paymentId 재활용 처리라 처리 불가 발생)
+            order.updateStatus(OrderStatus.FAIL);
 
             return ConfirmPaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
         }
