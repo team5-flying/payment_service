@@ -27,7 +27,7 @@ public class Subscription {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_method_id")
     private PaymentMethod paymentMethod;
 
@@ -55,7 +55,7 @@ public class Subscription {
         subscription.plan = plan;
         subscription.member = member;
         subscription.paymentMethod = paymentMethod;
-        subscription.status = SubscriptionStatus.TRIALING; // 생성시 TRIALING으로 설정
+        subscription.status = SubscriptionStatus.TRIALING; // 생성시 TRIALING 설정
         subscription.amount = amount;
         subscription.success = true; // 생성 성공으로 초기화
         subscription.action = "CREATE"; // 초기 액션 기록

@@ -64,7 +64,8 @@ public enum ErrorEnum {
     // endregion
 
     // region 구독 관련
-    ERR_NOT_FOUND_PLAN(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PLAN);
+    ERR_NOT_FOUND_PLAN(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PLAN),
+    ERR_NOT_FOUND_SUBSCRIPTION(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_SUBSCRIPTION);
     // endregion
 
     private final HttpStatus status;

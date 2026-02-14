@@ -56,6 +56,7 @@ public class Constants {
 
     // region 구독 관련 메시지
     public static final String MSG_NOT_FOUND_PLAN = "플랜을 찾을 수 없습니다";
+    public static final String MSG_NOT_FOUND_SUBSCRIPTION = "구독을 찾을 수 없습니다";
     // endregion
 }
 

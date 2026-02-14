@@ -9,6 +9,7 @@ import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
 import com.bootcamp.paymentdemo.domain.plan.repository.PlanRepository;
 import com.bootcamp.paymentdemo.domain.subscription.dto.CreateSubscriptionRequest;
 import com.bootcamp.paymentdemo.domain.subscription.dto.CreateSubscriptionResponse;
+import com.bootcamp.paymentdemo.domain.subscription.dto.SubscriptionResponse;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Subscription;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,5 +54,13 @@ public class SubscriptionService {
         subscriptionRepository.save(subscription);
 
         return CreateSubscriptionResponse.from(subscription);
+    }
+
+    @Transactional(readOnly = true)
+    public SubscriptionResponse getSubscription(String subscriptionId) {
+        Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
+
+        return SubscriptionResponse.from(subscription);
     }
 }

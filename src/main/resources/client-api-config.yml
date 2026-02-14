@@ -368,11 +368,11 @@ api:
               usage: 구독 관리 페이지 리다이렉트에 사용
 
     get-subscription:
-      url:
-      method:
+      url: /api/subscriptions/{subscriptionId}
+      method: GET
       description: 구독 조회
       pathParams:
-        - name:
+        - name: subscriptionId
           description: 구독 ID
       response:
         body:
