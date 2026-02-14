@@ -1,5 +1,8 @@
-package com.bootcamp.paymentdemo.domain.product.config;
+package com.bootcamp.paymentdemo.common.config;
 
+import com.bootcamp.paymentdemo.domain.plan.entity.BillingCycle;
+import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
+import com.bootcamp.paymentdemo.domain.plan.repository.PlanRepository;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.entity.ProductStatus;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
@@ -16,9 +19,11 @@ import java.util.List;
 @Profile({"dev", "local", "test"}) // 운영 환경 실행 제한
 public class DummyDataInitializer implements CommandLineRunner {
     private final ProductRepository productRepository;
+    private final PlanRepository planRepository;
 
-    public DummyDataInitializer(ProductRepository productRepository) {
+    public DummyDataInitializer(ProductRepository productRepository, PlanRepository planRepository) {
         this.productRepository = productRepository;
+        this.planRepository = planRepository;
     }
 
     @Override
@@ -38,6 +43,15 @@ public class DummyDataInitializer implements CommandLineRunner {
             products.add(Product.register(
                     "테스트", "테스트제품", "테스트 제품입니다", 1000L, 100L, ProductStatus.SALES));
             productRepository.saveAll(products);
+        }
+
+        // 플랜 더미 데이터 추가
+        if (planRepository.findAll().isEmpty()) {
+            List<Plan> plans = new ArrayList<>();
+            plans.add(Plan.createPlan("PLAN-BASIC", "베이직 플랜", 10000L, BillingCycle.MONTHLY));
+            plans.add(Plan.createPlan("PLAN-PRO", "프로 플랜", 20000L, BillingCycle.MONTHLY));
+            plans.add(Plan.createPlan("PLAN-ANNUAL", "연간 플랜", 200000L, BillingCycle.ANNUAL));
+            planRepository.saveAll(plans);
         }
     }
 }
