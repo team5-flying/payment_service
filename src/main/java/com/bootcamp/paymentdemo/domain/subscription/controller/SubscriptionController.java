@@ -56,4 +56,13 @@ public class SubscriptionController {
         BillingListResponse response = subscriptionService.getBillingHistories(subscriptionId);
         return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "청구 내역 조회 성공", response));
     }
+
+    @PatchMapping("/{subscriptionId}")
+    public ResponseEntity<BaseResponse<UpdateSubscriptionResponse>> updateSubscription(
+            @PathVariable String subscriptionId,
+            @RequestBody UpdateSubscriptionRequest request
+    ) {
+        UpdateSubscriptionResponse response = subscriptionService.updateSubscription(subscriptionId, request);
+        return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "구독 상태 변경 성공", response));
+    }
 }

@@ -11,6 +11,7 @@ import com.bootcamp.paymentdemo.domain.subscription.dto.*;
 import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
 import com.bootcamp.paymentdemo.domain.subscription.dto.BillingListResponse;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Subscription;
+import com.bootcamp.paymentdemo.domain.subscription.entity.SubscriptionStatus;
 import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionRepository;
 import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
@@ -121,5 +122,22 @@ public class SubscriptionService {
                 .collect(Collectors.toList());
 
         return new BillingListResponse(histories);
+    }
+
+    @Transactional
+    public UpdateSubscriptionResponse updateSubscription(String subscriptionId,UpdateSubscriptionRequest request) {
+        Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
+
+        if ("cancel".equalsIgnoreCase(request.getAction())) {
+            if (subscription.getStatus() == SubscriptionStatus.CANCELLED) {
+                throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_CANCELLED_SUBSCRIPTION);
+            }
+            subscription.cancel(request.getReason());
+        } else {
+            throw new ServiceErrorException(ErrorEnum.ERR_INVALID_REFUND_STATUS);
+        }
+
+        return new UpdateSubscriptionResponse(true, subscription.getSubscriptionId(), subscription.getStatus().name());
     }
 }

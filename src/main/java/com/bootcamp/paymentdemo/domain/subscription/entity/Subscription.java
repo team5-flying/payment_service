@@ -83,4 +83,10 @@ public class Subscription {
     public void expireSubscription() {
         this.status = SubscriptionStatus.PAST_DUE;
     }
+
+    public void cancel(String reason) {
+        this.status = SubscriptionStatus.CANCELLED;
+        this.reason = reason;
+        this.action = "CANCEL";
+    }
 }
