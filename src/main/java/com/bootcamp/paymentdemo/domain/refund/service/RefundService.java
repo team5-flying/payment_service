@@ -9,7 +9,7 @@ import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
-import com.bootcamp.paymentdemo.domain.payment.dto.ConfirmPaymentResponse;
+import com.bootcamp.paymentdemo.domain.payment.dto.PaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
@@ -18,12 +18,9 @@ import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLogStatus;
 import com.bootcamp.paymentdemo.domain.point.repository.MemberPointLogRepository;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
-import com.bootcamp.paymentdemo.domain.refund.dto.CancelPaymentResponse;
-import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
@@ -39,7 +36,7 @@ public class RefundService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public CancelPaymentResponse processRefund(String portOneId) {
+    public PaymentResponse processRefund(String portOneId) {
         // 중복 환불 방지 락
         Payment payment = paymentRepository.findByPortOneIdWithLock(portOneId)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
@@ -47,7 +44,7 @@ public class RefundService {
         // 멱등성 처리
         if (payment.getStatus() == PaymentStatus.CANCELLED) {
             log.info("이미 취소된 결제, portOneId: {}", portOneId);
-            return CancelPaymentResponse.register(true, portOneId, payment.getStatus().name());
+            return PaymentResponse.register(true, portOneId, payment.getStatus().name());
         }
 
         // 결제 취소를 위한 상태 체크 - 결제가 된 건만 수행
@@ -84,7 +81,7 @@ public class RefundService {
             product.updateStock(-po.getQuantity());
         }
 
-        return CancelPaymentResponse.register(
+        return PaymentResponse.register(
                 true,
                 order.getOrderId().toString(),
                 PaymentStatus.COMPLETE.name()

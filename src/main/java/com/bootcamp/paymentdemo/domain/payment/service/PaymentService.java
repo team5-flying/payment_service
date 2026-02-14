@@ -1,6 +1,5 @@
 package com.bootcamp.paymentdemo.domain.payment.service;
 
-import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
@@ -9,7 +8,7 @@ import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
-import com.bootcamp.paymentdemo.domain.payment.dto.ConfirmPaymentResponse;
+import com.bootcamp.paymentdemo.domain.payment.dto.PaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentRequest;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
@@ -19,9 +18,6 @@ import com.bootcamp.paymentdemo.domain.payment.validator.PaymentValidator;
 import com.bootcamp.paymentdemo.domain.point.service.PointService;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
-import com.bootcamp.paymentdemo.domain.refund.dto.CancelPaymentResponse;
-import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
-import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,7 +36,6 @@ public class PaymentService {
     private final PaymentValidator paymentValidator;
 
     private final PointService pointService;
-    private final PortOneService portOneService;
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
@@ -93,7 +88,7 @@ public class PaymentService {
 
     // 결제 확정
     @Transactional
-    public ConfirmPaymentResponse confirmPayment(String paymentId) {
+    public PaymentResponse confirmPayment(String paymentId) {
         Payment payment = paymentRepository.findByPortOneIdWithLock(paymentId)
                 .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
 
@@ -101,11 +96,11 @@ public class PaymentService {
 
         // 멱등성 처리
         if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
-            return ConfirmPaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
+            return PaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
 
         if (payment.getStatus().equals(PaymentStatus.FAIL)) {
-            return ConfirmPaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
+            return PaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
         }
 
         Order order = payment.getOrder();
@@ -138,16 +133,15 @@ public class PaymentService {
             member.updateGrade(newGrade);
         } catch (Exception e) {
             log.error("결제 확정 진행 중 오류 : {}", e.getMessage());
-            portOneService.cancelPayment(paymentId, "결제 확정 진행 중 오류 발생 : " + e.getMessage());
             payment.updateStatus(PaymentStatus.FAIL);
 
             // PaymentId 가 기록된 채로 실패한 경우, 재시도가 불가함 (paymentId 재활용 처리라 처리 불가 발생)
             order.updateStatus(OrderStatus.FAIL);
 
-            return ConfirmPaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
+            return PaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
         }
 
-        return ConfirmPaymentResponse.register(
+        return PaymentResponse.register(
                 true,
                 order.getOrderId().toString(),
                 PaymentStatus.COMPLETE.name()

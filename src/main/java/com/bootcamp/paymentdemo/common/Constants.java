@@ -34,6 +34,8 @@ public class Constants {
     public static final String MSG_NOT_ENOUGH_POINT = "주문 시 사용할 포인트 보다 보유한 포인트가 적습니다";
     public static final String MSG_ZERO_ACTUAL_PRICE = "결제금액이 0원일 수는 없습니다";
     public static final String MSG_NOT_SUCCESS_PAYMENT = "결제에 실패하였습니다";
+    public static final String MSG_INVALID_FINAL_AMOUNT = "결제된 금액과 주문의 최종 금액이 일치하지 않습니다";
+
     // endregion
 
     // region 환불 관련 메세지
@@ -41,7 +43,7 @@ public class Constants {
     public static final String MSG_ALREADY_CANCELLED = "이미 환불로 취소된 결제입니다";
     public static final String MSG_NOT_PAID = "결제가 완료된 건이 아닙니다";
     public static final String MSG_INVALID_REFUND_STATUS = "환불 가능한 결제 상태가 아닙니다";
-    public static final String MSG_FAIL_REFUND = "결제 취소 요청이 실패했습니다";
+    public static final String MSG_FAIL_REFUND = "결제 취소 요청이 실패하였습니다";
     // endregion
 
     // region 서버 관련 메세지
@@ -51,7 +53,7 @@ public class Constants {
     // endregion
 
     // region 웹훅 관련 메시지
-    public static final String MSG_WEBHOOK_NOT_FOUND_PAYMENT = "포트원 결제 정보 조회 실패";
+    public static final String MSG_WEBHOOK_NOT_FOUND_PAYMENT = "결제 정보 조회에 실패하였습니다";
     public static final String MSG_WEBHOOK_INVALID_SIGNATURE = "웹훅 시그니처가 일치하지 않습니다";
     // endregion
 }

@@ -1,7 +1,7 @@
 package com.bootcamp.paymentdemo.domain.payment.controller;
 
 import com.bootcamp.paymentdemo.common.dto.BaseResponse;
-import com.bootcamp.paymentdemo.domain.payment.dto.ConfirmPaymentResponse;
+import com.bootcamp.paymentdemo.domain.payment.dto.PaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentRequest;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
@@ -28,7 +28,7 @@ public class PaymentController {
 
     // 결제 확정은 success 필드의 응답이 중요하므로 일단 공통 해제
     @PostMapping("/{paymentId}/confirm")
-    public ResponseEntity<ConfirmPaymentResponse> confirmPayment(
+    public ResponseEntity<PaymentResponse> confirmPayment(
             @PathVariable String paymentId
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(paymentService.confirmPayment(paymentId));
