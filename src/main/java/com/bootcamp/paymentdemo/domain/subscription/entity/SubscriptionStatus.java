@@ -1,9 +1,9 @@
 package com.bootcamp.paymentdemo.domain.subscription.entity;
 
 public enum SubscriptionStatus {
-    TRIALING,
-    ACTIVE,
-    CANCELLED,
-    SUSPENDED,
-    ENDED
+    TRIALING,        // 체험판 (결제 전)
+    ACTIVE,          // 활성 (결제 후)
+    PAST_DUE,        // 연체
+    CANCELLED,       // 해지
+    EXPIRED          // 만료
 }

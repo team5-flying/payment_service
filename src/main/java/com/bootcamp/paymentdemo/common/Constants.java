@@ -53,6 +53,10 @@ public class Constants {
     public static final String MSG_WEBHOOK_NOT_FOUND_PAYMENT = "포트원 결제 정보 조회 실패";
     public static final String MSG_WEBHOOK_INVALID_SIGNATURE = "웹훅 시그니처가 일치하지 않습니다";
     // endregion
+
+    // region 구독 관련 메시지
+    public static final String MSG_NOT_FOUND_PLAN = "플랜을 찾을 수 없습니다";
+    // endregion
 }
 
 

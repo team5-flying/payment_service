@@ -60,7 +60,11 @@ public enum ErrorEnum {
 
     // region 웹훅 관련
     ERR_WEBHOOK_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_WEBHOOK_NOT_FOUND_PAYMENT),
-    ERR_WEBHOOK_INVALID_SIGNATURE(HttpStatus.BAD_REQUEST, MSG_WEBHOOK_INVALID_SIGNATURE);
+    ERR_WEBHOOK_INVALID_SIGNATURE(HttpStatus.BAD_REQUEST, MSG_WEBHOOK_INVALID_SIGNATURE),
+    // endregion
+
+    // region 구독 관련
+    ERR_NOT_FOUND_PLAN(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PLAN);
     // endregion
 
     private final HttpStatus status;
