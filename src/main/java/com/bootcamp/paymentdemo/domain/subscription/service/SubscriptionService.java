@@ -7,11 +7,12 @@ import com.bootcamp.paymentdemo.domain.payment.entity.PaymentMethod;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentMethodRepository;
 import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
 import com.bootcamp.paymentdemo.domain.plan.repository.PlanRepository;
-import com.bootcamp.paymentdemo.domain.subscription.dto.CreateSubscriptionRequest;
-import com.bootcamp.paymentdemo.domain.subscription.dto.CreateSubscriptionResponse;
-import com.bootcamp.paymentdemo.domain.subscription.dto.SubscriptionResponse;
+import com.bootcamp.paymentdemo.domain.subscription.dto.*;
+import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Subscription;
+import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionRepository;
+import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,8 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final PlanRepository planRepository;
+    private final BillingHistoryRepository billingHistoryRepository;
+    private final PortOneService portOneService;
 
     @Transactional
     public CreateSubscriptionResponse createSubscription(CreateSubscriptionRequest request, Member member) {
@@ -62,5 +65,44 @@ public class SubscriptionService {
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
 
         return SubscriptionResponse.from(subscription);
+    }
+
+    @Transactional
+    public CreateBillingResponse createBilling(String subscriptionId, CreateBillingRequest request) {
+        Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
+
+        // 결제 ID 및 빌링 ID 생성
+        String billingId = "BILL-" + UUID.randomUUID().toString().substring(0,8);
+        String portOneId = "PAY-SUB-" + UUID.randomUUID().toString().substring(0,12);
+
+        // 청구 내역 생성
+        BillingHistory billingHistory = BillingHistory.create(
+                billingId,
+                subscription,
+                portOneId,
+                subscription.getAmount(),
+                request.getPeriodStrat(),
+                request.getPeriodEnd()
+        );
+
+        try {
+            // 포트원 빌링키 결제 요청
+            String orderName = subscription.getPlan().getName() + " 정기 결제";
+            portOneService.payWithBillingKey(portOneId, subscription.getPaymentMethod().getBillingKey(), orderName, subscription.getAmount());
+
+            billingHistory.complete();
+
+            // 다음 결제일 갱신
+            subscription.renewSubscription();
+        } catch (Exception e) {
+            billingHistory.fail(e.getMessage());
+
+            // 결제 실패 시 구독 상태 변경
+            subscription.expireSubscription();
+        }
+
+        billingHistoryRepository.save(billingHistory);
+        return CreateBillingResponse.from(billingHistory);
     }
 }

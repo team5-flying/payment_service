@@ -69,4 +69,18 @@ public class Subscription {
 
         return subscription;
     }
+
+    // 결제성공 시 주기 갱신
+    public void renewSubscription() {
+        LocalDateTime now = LocalDateTime.now();
+        switch (this.plan.getBillingCycle()) {
+            case MONTHLY -> this.currentPeriodEnd = this. currentPeriodEnd.plusMonths(1);
+            case QUARTERLY -> this.currentPeriodEnd = this.currentPeriodEnd.plusMonths(3);
+            case ANNUAL -> this.currentPeriodEnd = this.currentPeriodEnd.plusYears(1);
+        }
+    }
+
+    public void expireSubscription() {
+        this.status = SubscriptionStatus.PAST_DUE;
+    }
 }

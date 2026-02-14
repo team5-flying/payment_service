@@ -5,9 +5,7 @@ import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
-import com.bootcamp.paymentdemo.domain.subscription.dto.CreateSubscriptionRequest;
-import com.bootcamp.paymentdemo.domain.subscription.dto.CreateSubscriptionResponse;
-import com.bootcamp.paymentdemo.domain.subscription.dto.SubscriptionResponse;
+import com.bootcamp.paymentdemo.domain.subscription.dto.*;
 import com.bootcamp.paymentdemo.domain.subscription.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,5 +40,14 @@ public class SubscriptionController {
     public ResponseEntity<BaseResponse<SubscriptionResponse>> getSubscription(@PathVariable String subscriptionId) {
         SubscriptionResponse response = subscriptionService.getSubscription(subscriptionId);
         return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "구독 조회 성공", response));
+    }
+
+    @PostMapping("/{subscriptionId}/billings")
+    public ResponseEntity<BaseResponse<CreateBillingResponse>> createBilling(
+            @PathVariable String subscriptionId,
+            @RequestBody CreateBillingRequest request
+    ) {
+        CreateBillingResponse response = subscriptionService.createBilling(subscriptionId, request);
+        return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "결제 요청 처리 완료", response));
     }
 }
