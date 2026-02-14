@@ -33,7 +33,8 @@ public class RefundService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processRefund(String portOneId) {
-        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(portOneId)
+        // 중복 환불 방지 락
+        Payment payment = paymentRepository.findByPortOneIdWithLock(portOneId)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
 
         if (payment.getStatus() == PaymentStatus.CANCELLED) {

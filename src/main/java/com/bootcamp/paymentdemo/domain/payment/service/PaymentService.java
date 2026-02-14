@@ -3,7 +3,6 @@ package com.bootcamp.paymentdemo.domain.payment.service;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
-import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
@@ -38,7 +37,6 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final ProductOrderRepository productOrderRepository;
     private final ProductRepository productRepository;
-    private final MemberRepository memberRepository;
 
     private final PaymentValidator paymentValidator;
     private final PointService pointService;
@@ -92,17 +90,21 @@ public class PaymentService {
     // 결제 확정
     @Transactional
     public ConfirmPaymentResponse confirmPayment(String paymentId) {
-        // 결제 및 주문 상품 조회
-        Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId)
+        Payment payment = paymentRepository.findByPortOneIdWithLock(paymentId)
                 .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
+
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
-        // 멱등성 검증 (이미 완료된 결제는 재처리 안함)
+
         if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
             return ConfirmPaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
+        if (payment.getStatus().equals(PaymentStatus.FAIL)) {
+            return ConfirmPaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
+        }
+
         Order order = payment.getOrder();
-        Member member = memberRepository.findByIdWithLock(order.getMember().getMemberId()).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_MEMBER));
+        Member member = order.getMember();
 
         try {
             // 재고 및 포인트 재검증
