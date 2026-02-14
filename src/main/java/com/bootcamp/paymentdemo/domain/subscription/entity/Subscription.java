@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.domain.subscription.entity;
 
+import com.bootcamp.paymentdemo.common.entity.Base;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.payment.entity.PaymentMethod;
 import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @Table(name = "subscriptions")
 @NoArgsConstructor
-public class Subscription {
+public class Subscription extends Base {
 
     @Id
     @Column(name = "subscription_id")
@@ -41,6 +42,7 @@ public class Subscription {
     @Column(nullable = false)
     private LocalDateTime currentPeriodEnd;
 
+    private LocalDateTime trialEnd;
     private String reason;
     private String action;
     private LocalDateTime canceledAt;
@@ -54,16 +56,26 @@ public class Subscription {
         subscription.plan = plan;
         subscription.member = member;
         subscription.paymentMethod = paymentMethod;
-        subscription.status = SubscriptionStatus.TRIALING; // 생성시 TRIALING 설정
         subscription.amount = amount;
         subscription.success = true; // 생성 성공으로 초기화
         subscription.action = "CREATE"; // 초기 액션 기록
 
         LocalDateTime now = LocalDateTime.now();
-        switch (plan.getBillingCycle()) {
-            case MONTHLY -> subscription.currentPeriodEnd = now.plusMonths(1);
-            case QUARTERLY -> subscription.currentPeriodEnd = now.plusMonths(3);
-            case ANNUAL -> subscription.currentPeriodEnd = now.plusYears(1);
+        
+        // 체험 기간 30일 적용
+        int trialPeriodDays = 30;
+
+        if (trialPeriodDays > 0) {
+            subscription.status = SubscriptionStatus.TRIALING;
+            subscription.trialEnd = now.plusDays(trialPeriodDays);
+            subscription.currentPeriodEnd = subscription.trialEnd;
+        } else {
+            subscription.status = SubscriptionStatus.ACTIVE;
+            switch (plan.getBillingCycle()) {
+                case MONTHLY -> subscription.currentPeriodEnd = now.plusMonths(1);
+                case QUARTERLY -> subscription.currentPeriodEnd = now.plusMonths(3);
+                case ANNUAL -> subscription.currentPeriodEnd = now.plusYears(1);
+            }
         }
 
         return subscription;
@@ -71,9 +83,10 @@ public class Subscription {
 
     // 결제성공 시 주기 갱신
     public void renewSubscription() {
-        LocalDateTime now = LocalDateTime.now();
+        this.status = SubscriptionStatus.ACTIVE;
+
         switch (this.plan.getBillingCycle()) {
-            case MONTHLY -> this.currentPeriodEnd = this. currentPeriodEnd.plusMonths(1);
+            case MONTHLY -> this.currentPeriodEnd = this.currentPeriodEnd.plusMonths(1);
             case QUARTERLY -> this.currentPeriodEnd = this.currentPeriodEnd.plusMonths(3);
             case ANNUAL -> this.currentPeriodEnd = this.currentPeriodEnd.plusYears(1);
         }
@@ -84,7 +97,7 @@ public class Subscription {
     }
 
     public void cancel(String reason) {
-        this.status = SubscriptionStatus.CANCELLED;
+        this.status = SubscriptionStatus.CANCELED;
         this.reason = reason;
         this.action = "CANCEL";
         this.canceledAt = LocalDateTime.now();

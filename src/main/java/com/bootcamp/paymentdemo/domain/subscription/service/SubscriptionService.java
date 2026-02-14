@@ -42,7 +42,7 @@ public class SubscriptionService {
 
         // 빌링키 유효성 검증
         portOneService.validateBillingKey(request.getBillingKey());
-        
+
         // 빌링키 저장 (이미 존재하면 그대로 사용하고 없으면 새로 생성)
         PaymentMethod paymentMethod = paymentMethodRepository.findByBillingKey(request.getBillingKey())
                 .orElseGet(() -> {
@@ -132,7 +132,7 @@ public class SubscriptionService {
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
 
         if ("cancel".equalsIgnoreCase(request.getAction())) {
-            if (subscription.getStatus() == SubscriptionStatus.CANCELLED) {
+            if (subscription.getStatus() == SubscriptionStatus.CANCELED) {
                 throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_CANCELLED_SUBSCRIPTION);
             }
             subscription.cancel(request.getReason());

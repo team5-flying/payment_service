@@ -27,7 +27,7 @@ public class SubscriptionScheduler {
         LocalDateTime now = LocalDateTime.now();
 
         // 결제 대상 조회
-        List<Subscription> subscriptions = subscriptionRepository.findAllByStatusInAndCurrentPeriodEndBefore(List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE), now);
+        List<Subscription> subscriptions = subscriptionRepository.findAllByStatusInAndCurrentPeriodEndBefore(List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE, SubscriptionStatus.TRIALING), now);
 
         for (Subscription sub : subscriptions) {
             try {
