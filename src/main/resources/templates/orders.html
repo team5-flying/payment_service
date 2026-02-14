@@ -403,7 +403,6 @@
         function getStatusStyle(status) {
             const styles = {
                 'PENDING': 'background: #FEF3C7; color: #92400E;',
-                'PAID': 'background: #D1FAE5; color: #065F46;',
                 'COMPLETE': 'background: #D1FAE5; color: #065F46;',
                 'CANCELLED': 'background: #FEE2E2; color: #991B1B;',
                 'FAIL': 'background: #FEE2E2; color: #991B1B;',
@@ -417,9 +416,8 @@
         function getStatusText(status) {
             const texts = {
                 'PENDING': '결제 대기',
-                'PAID': '결제금 지불 완료',
                 'COMPLETE': '결제 확정',
-                'CANCELLED': '취소됨',
+                'CANCELLED': '환불',
                 'FAIL': '결제 실패',
                 'SHIPPED': '배송중',
                 'DELIVERED': '배송 완료'

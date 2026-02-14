@@ -39,8 +39,9 @@ public class Constants {
     // region 환불 관련 메세지
     public static final String MSG_NOT_FOUND_PAYMENT = "존재하지 않는 결제 정보입니다";
     public static final String MSG_ALREADY_CANCELLED = "이미 환불로 취소된 결제입니다";
+    public static final String MSG_NOT_PAID = "결제가 완료된 건이 아닙니다";
     public static final String MSG_INVALID_REFUND_STATUS = "환불 가능한 결제 상태가 아닙니다";
-    public static final String MSG_FAIL_REFUND = "포트원 결제 취소 요청이 실패했습니다";
+    public static final String MSG_FAIL_REFUND = "결제 취소 요청이 실패했습니다";
     // endregion
 
     // region 서버 관련 메세지

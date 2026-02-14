@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.domain.payment.service;
 
+import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
@@ -18,6 +19,8 @@ import com.bootcamp.paymentdemo.domain.payment.validator.PaymentValidator;
 import com.bootcamp.paymentdemo.domain.point.service.PointService;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
+import com.bootcamp.paymentdemo.domain.refund.dto.CancelPaymentResponse;
+import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
 import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,15 +37,15 @@ import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
+    private final PaymentValidator paymentValidator;
+
+    private final PointService pointService;
+    private final PortOneService portOneService;
+
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final ProductOrderRepository productOrderRepository;
     private final ProductRepository productRepository;
-
-    private final PaymentValidator paymentValidator;
-    private final PointService pointService;
-
-    private final PortOneService portOneService;
 
     // 결제 시도
     @Transactional
@@ -96,10 +99,11 @@ public class PaymentService {
 
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
-
+        // 멱등성 처리
         if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
             return ConfirmPaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
+
         if (payment.getStatus().equals(PaymentStatus.FAIL)) {
             return ConfirmPaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
         }
@@ -115,8 +119,8 @@ public class PaymentService {
             payment.updateStatus(PaymentStatus.COMPLETE);
             order.updateStatus(OrderStatus.COMPLETE);
 
-            // 여러 상품의 락을 획득할 때는 항상 일정한 순서(ID)로 진입해야 데드락을 막을 수 있음
-            productOrderList.sort(Comparator.comparing(po -> po.getProduct().getId()));
+            // 동시에 접근 시 여러 상품의 락을 획득할 때는 항상 일정한 순서로 진입해야 데드락을 막을 수 있음 (Lock Ordering)
+            productOrderList.sort(Comparator.comparing(productOrder -> productOrder.getProduct().getId()));
 
             // 재고 차감
             for (ProductOrder productOrder : productOrderList) {
@@ -132,7 +136,7 @@ public class PaymentService {
             member.addTotalPriceAmount(payment.getPriceSnap());
             Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
             member.updateGrade(newGrade);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             log.error("결제 확정 진행 중 오류 : {}", e.getMessage());
             portOneService.cancelPayment(paymentId, "결제 확정 진행 중 오류 발생 : " + e.getMessage());
             payment.updateStatus(PaymentStatus.FAIL);

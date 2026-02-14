@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.domain.refund.controller;
 
 import com.bootcamp.paymentdemo.common.dto.BaseResponse;
+import com.bootcamp.paymentdemo.domain.refund.dto.CancelPaymentResponse;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
 import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
@@ -23,19 +24,12 @@ public class RefundController {
     private final RefundService refundService;
     private final PortOneService portOneService;
 
+    // 결제 취소는 success 필드의 응답이 중요하므로 일단 공통 해제
     @PostMapping("/{paymentId}/cancel")
-    public ResponseEntity<BaseResponse<Void>> cancelPayment(
-            @PathVariable String paymentId,
-            @AuthenticationPrincipal UserDetails loginMemberInfo
+    public ResponseEntity<CancelPaymentResponse> cancelPayment(
+            @PathVariable String paymentId
     ) {
-        log.info("결제 취소 요청 수신: paymentId {}", paymentId);
-
-        // 포트원에 결제 취소 명령
         portOneService.cancelPayment(paymentId, "사용자 요청 환불");
-
-        // RefundService를 호출하여 환불 로직 수행
-        refundService.processRefund(paymentId);
-
-        return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "환불이 성공적으로 처리되었습니다.", null));
+        return ResponseEntity.status(HttpStatus.OK).body(refundService.processRefund(paymentId));
     }
 }

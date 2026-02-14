@@ -26,7 +26,7 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), null, paymentService.createPayment(request)));
     }
 
-    // 결제는 success 필드의 응답이 중요하므로 일단 공통 해제
+    // 결제 확정은 success 필드의 응답이 중요하므로 일단 공통 해제
     @PostMapping("/{paymentId}/confirm")
     public ResponseEntity<ConfirmPaymentResponse> confirmPayment(
             @PathVariable String paymentId

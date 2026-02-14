@@ -1,14 +1,10 @@
 package com.bootcamp.paymentdemo.domain.product.dto;
 
 import com.bootcamp.paymentdemo.common.entity.Base;
-import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.entity.ProductStatus;
-import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
