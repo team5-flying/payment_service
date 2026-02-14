@@ -50,4 +50,10 @@ public class SubscriptionController {
         CreateBillingResponse response = subscriptionService.createBilling(subscriptionId, request);
         return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "결제 요청 처리 완료", response));
     }
+
+    @GetMapping("/{subscriptionId}/billings")
+    public ResponseEntity<BaseResponse<BillingListResponse>> getBillingHistories(@PathVariable String subscriptionId) {
+        BillingListResponse response = subscriptionService.getBillingHistories(subscriptionId);
+        return ResponseEntity.ok(BaseResponse.success(HttpStatus.OK.name(), "청구 내역 조회 성공", response));
+    }
 }

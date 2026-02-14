@@ -9,6 +9,7 @@ import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
 import com.bootcamp.paymentdemo.domain.plan.repository.PlanRepository;
 import com.bootcamp.paymentdemo.domain.subscription.dto.*;
 import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
+import com.bootcamp.paymentdemo.domain.subscription.dto.BillingListResponse;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Subscription;
 import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionRepository;
@@ -18,7 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -82,7 +85,7 @@ public class SubscriptionService {
                 subscription,
                 portOneId,
                 subscription.getAmount(),
-                request.getPeriodStrat(),
+                request.getPeriodStart(),
                 request.getPeriodEnd()
         );
 
@@ -104,5 +107,19 @@ public class SubscriptionService {
 
         billingHistoryRepository.save(billingHistory);
         return CreateBillingResponse.from(billingHistory);
+    }
+
+    @Transactional
+    public BillingListResponse getBillingHistories(String subscriptionId) {
+        // 구독 존재 확인
+        if (!subscriptionRepository.existsById(subscriptionId)) {
+            throw new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION);
+        }
+
+        List<BillingHistoryResponse> histories = billingHistoryRepository.findAllBySubscriptionId(subscriptionId).stream()
+                .map(BillingHistoryResponse::from)
+                .collect(Collectors.toList());
+
+        return new BillingListResponse(histories);
     }
 }

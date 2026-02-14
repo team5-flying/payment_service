@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, String> {
-    @Query("select s from Subscription s" +
-            "where s.status = :status and s.currentPeriodEnd <= :now")
+
+    @Query("select s from Subscription s where s.status = :status and s.currentPeriodEnd <= :now")
     List<Subscription> findAllByStatusAndCurrentPeriodEndBefore(@Param("status")SubscriptionStatus status, @Param("now") LocalDateTime now);
 }

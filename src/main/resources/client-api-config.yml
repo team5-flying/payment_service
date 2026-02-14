@@ -476,11 +476,11 @@ api:
               description: "청구 상태 (COMPLETED: 결제 완료, FAILED: 실패)"
 
     list-billing-history:
-      url:
-      method:
+      url: /api/subscription/{subscriptionId}/billings
+      method: GET
       description: 청구 내역 조회
       pathParams:
-        - name:
+        - name: subscriptionId
           description: 구독 ID
       response:
         body:
