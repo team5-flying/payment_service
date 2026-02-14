@@ -41,10 +41,9 @@ public class Subscription {
     @Column(nullable = false)
     private LocalDateTime currentPeriodEnd;
 
-
     private String reason;
-
     private String action;
+    private LocalDateTime canceledAt;
 
     @Column(nullable = false)
     private boolean success;
@@ -88,5 +87,6 @@ public class Subscription {
         this.status = SubscriptionStatus.CANCELLED;
         this.reason = reason;
         this.action = "CANCEL";
+        this.canceledAt = LocalDateTime.now();
     }
 }

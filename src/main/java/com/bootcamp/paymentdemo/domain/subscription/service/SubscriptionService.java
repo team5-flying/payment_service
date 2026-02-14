@@ -9,7 +9,6 @@ import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
 import com.bootcamp.paymentdemo.domain.plan.repository.PlanRepository;
 import com.bootcamp.paymentdemo.domain.subscription.dto.*;
 import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
-import com.bootcamp.paymentdemo.domain.subscription.dto.BillingListResponse;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Subscription;
 import com.bootcamp.paymentdemo.domain.subscription.entity.SubscriptionStatus;
 import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
@@ -41,6 +40,9 @@ public class SubscriptionService {
         Plan plan = planRepository.findById(request.getPlanId())
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PLAN));
 
+        // 빌링키 유효성 검증
+        portOneService.validateBillingKey(request.getBillingKey());
+        
         // 빌링키 저장 (이미 존재하면 그대로 사용하고 없으면 새로 생성)
         PaymentMethod paymentMethod = paymentMethodRepository.findByBillingKey(request.getBillingKey())
                 .orElseGet(() -> {

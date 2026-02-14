@@ -59,6 +59,7 @@ public class Constants {
     public static final String MSG_NOT_FOUND_SUBSCRIPTION = "구독을 찾을 수 없습니다";
     public static final String MSG_ALREADY_CANCELLED_SUBSCRIPTION = "이미 해지된 구독입니다";
     public static final String MSG_NOT_FOUND_ACTION = "액션을 찾을 수 없습니다";
+    public static final String MSG_INVALID_BILLING_KEY= "유효하지 않은 빌링키입니다";
     // endregion
 }
 

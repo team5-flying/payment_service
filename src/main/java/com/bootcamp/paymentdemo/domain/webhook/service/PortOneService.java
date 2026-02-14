@@ -110,4 +110,22 @@ public class PortOneService {
                 "tossChannelKey", tossChannelKey
         );
     }
+
+    // 빌링키 유효성 검증
+    public void validateBillingKey(String billingKey) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "PortOne " + apiSecret);
+        headers.set("Count-Type", "application/json");
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String url = String.format("%s/billing-keys/%s", baseUrl, billingKey);
+
+        try {
+            restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            log.info("빌링키 유효성 검증 성공: {}", billingKey);
+        } catch (Exception e) {
+            log.error("빌링키 유효성 검증 실패: {}", e.getMessage());
+            throw new ServiceErrorException(ErrorEnum.ERR_INVALID_BILLING_KEY);
+        }
+    }
 }
