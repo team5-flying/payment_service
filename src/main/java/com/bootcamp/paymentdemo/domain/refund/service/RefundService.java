@@ -15,6 +15,8 @@ import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLog;
 import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLogStatus;
 import com.bootcamp.paymentdemo.domain.point.repository.MemberPointLogRepository;
+import com.bootcamp.paymentdemo.domain.product.entity.Product;
+import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class RefundService {
     private final PaymentRepository paymentRepository;
     private final MemberPointLogRepository memberPointLogRepository;
     private final ProductOrderRepository productOrderRepository;
+    private final ProductRepository productRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processRefund(String portOneId) {
@@ -64,8 +67,11 @@ public class RefundService {
         // 재고 복구
         List<ProductOrder> productOrders = productOrderRepository.findByOrderAndDeletedFalse(order);
         for (ProductOrder po : productOrders) {
+            // 재고 복구 시에도 동시성 이슈 방지를 위해 락
+            Product product = productRepository.findByIdWithLock(po.getProduct().getId())
+                    .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PRODUCT));
             // 주문 시 소모했던 수량(positive)을 빼기 위해 음수(-) 전달
-            po.getProduct().updateStock(-po.getQuantity());
+            product.updateStock(-po.getQuantity());
         }
     }
 

@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -113,6 +114,9 @@ public class PaymentService {
             // 결제 및 주문 상태 변경
             payment.updateStatus(PaymentStatus.COMPLETE);
             order.updateStatus(OrderStatus.COMPLETE);
+
+            // 여러 상품의 락을 획득할 때는 항상 일정한 순서(ID)로 진입해야 데드락을 막을 수 있음
+            productOrderList.sort(Comparator.comparing(po -> po.getProduct().getId()));
 
             // 재고 차감
             for (ProductOrder productOrder : productOrderList) {
