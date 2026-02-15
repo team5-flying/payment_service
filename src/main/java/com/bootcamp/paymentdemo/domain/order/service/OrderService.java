@@ -11,7 +11,6 @@ import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderNumberSequence;
-import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderNumberSequenceRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
@@ -40,7 +39,6 @@ public class OrderService {
 
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
-
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
@@ -165,20 +163,4 @@ public class OrderService {
                 , order.getDeletedAt()
         );
     }
-
-    /*
-    // TODO 필요 없으면 삭제
-    @Transactional
-    public void paidOrder(String orderNumber) {
-        Order order = orderRepository.findByOrderNumberAndDeletedFalse(orderNumber)
-                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_ORDER));
-
-        // 완료된 주문에 대한 중복 처리 방지
-        if (order.getStatus() == OrderStatus.COMPLETE) {
-            return;
-        }
-
-        order.updateStatus(OrderStatus.PAID);
-    }
-    */
 }

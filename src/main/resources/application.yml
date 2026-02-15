@@ -27,11 +27,11 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
-    show-sql: true
+      ddl-auto: update
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
 server:
   port: 8080
@@ -42,16 +42,17 @@ server:
 portone:
   api:
     base-url: https://api.portone.io
-    secret: ${PORTONE_API_SECRET:your-api-secret}
+    secret: ${PORTONE_API_SECRET}
+    webhook-secret: ${WEBHOOK_SECRET}
   store:
-    id: ${PORTONE_STORE_ID:your-store-id}
+    id: ${PORTONE_STORE_ID}
   channel:
-    kg-inicis: ${PORTONE_CHANNEL_KG:your-kg-inicis-channel-key}
+    kg-inicis: ${PORTONE_CHANNEL_KG}
     toss: ${PORTONE_CHANNEL_TOSS:your-toss-channel-key}
+
 # JWT Configuration
 jwt:
   secret: c3BhcnRhIG5iY2FtIHRlYW01IGZseWluZyBwYXltZW50IHNlcnZpY2UgcHJvamVjdA==
-
 
 # UI Branding Configuration
 app:

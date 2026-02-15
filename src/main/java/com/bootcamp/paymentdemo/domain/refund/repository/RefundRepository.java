@@ -5,6 +5,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RefundRepository extends JpaRepository<Refund, Long> {
 
-    // 멱등성 체크
-    boolean existsByPayment_PaymentId(Long paymentId);
 }

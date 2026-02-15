@@ -1,7 +1,7 @@
 package com.bootcamp.paymentdemo.domain.webhook.controller;
 
 import com.bootcamp.paymentdemo.domain.webhook.dto.WebhookRequest;
-import com.bootcamp.paymentdemo.domain.webhook.service.WebhookService;
+import com.bootcamp.paymentdemo.domain.webhook.service.WebhookExternalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/webhooks")
 public class WebhookController {
 
-    private final WebhookService webhookService;
+    private final WebhookExternalService webhookExternalService;
 
     @PostMapping("/portone")
     public ResponseEntity<Void> handlePortOneWebhook(
@@ -27,7 +27,7 @@ public class WebhookController {
         // webhookId가 없는 경우 paymentId를 대체 키로 사용
         String effectiveId = (webhookId != null) ? webhookId : "test-" + request.getPaymentId();
 
-        webhookService.process(effectiveId, signature, request);
+        webhookExternalService.webhookExternalProcess(effectiveId, signature, request);
         return ResponseEntity.ok().build();
     }
 }

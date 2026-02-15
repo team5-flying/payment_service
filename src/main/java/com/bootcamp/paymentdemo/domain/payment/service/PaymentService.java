@@ -8,7 +8,7 @@ import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
-import com.bootcamp.paymentdemo.domain.payment.dto.ConfirmPaymentResponse;
+import com.bootcamp.paymentdemo.domain.payment.dto.PaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentRequest;
 import com.bootcamp.paymentdemo.domain.payment.dto.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
@@ -18,7 +18,6 @@ import com.bootcamp.paymentdemo.domain.payment.validator.PaymentValidator;
 import com.bootcamp.paymentdemo.domain.point.service.PointService;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
-import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,15 +33,14 @@ import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
+    private final PaymentValidator paymentValidator;
+
+    private final PointService pointService;
+
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final ProductOrderRepository productOrderRepository;
     private final ProductRepository productRepository;
-
-    private final PaymentValidator paymentValidator;
-    private final PointService pointService;
-
-    private final PortOneService portOneService;
 
     // 결제 시도
     @Transactional
@@ -90,18 +88,19 @@ public class PaymentService {
 
     // 결제 확정
     @Transactional
-    public ConfirmPaymentResponse confirmPayment(String paymentId) {
+    public PaymentResponse confirmPayment(String paymentId) {
         Payment payment = paymentRepository.findByPortOneIdWithLock(paymentId)
                 .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
 
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
-
+        // 멱등성 처리
         if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
-            return ConfirmPaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
+            return PaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
+
         if (payment.getStatus().equals(PaymentStatus.FAIL)) {
-            return ConfirmPaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
+            return PaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
         }
 
         Order order = payment.getOrder();
@@ -115,8 +114,8 @@ public class PaymentService {
             payment.updateStatus(PaymentStatus.COMPLETE);
             order.updateStatus(OrderStatus.COMPLETE);
 
-            // 여러 상품의 락을 획득할 때는 항상 일정한 순서(ID)로 진입해야 데드락을 막을 수 있음
-            productOrderList.sort(Comparator.comparing(po -> po.getProduct().getId()));
+            // 동시에 접근 시 여러 상품의 락을 획득할 때는 항상 일정한 순서로 진입해야 데드락을 막을 수 있음 (Lock Ordering)
+            productOrderList.sort(Comparator.comparing(productOrder -> productOrder.getProduct().getId()));
 
             // 재고 차감
             for (ProductOrder productOrder : productOrderList) {
@@ -132,18 +131,17 @@ public class PaymentService {
             member.addTotalPriceAmount(payment.getPriceSnap());
             Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
             member.updateGrade(newGrade);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             log.error("결제 확정 진행 중 오류 : {}", e.getMessage());
-            portOneService.cancelPayment(paymentId, "결제 확정 진행 중 오류 발생 : " + e.getMessage());
             payment.updateStatus(PaymentStatus.FAIL);
 
             // PaymentId 가 기록된 채로 실패한 경우, 재시도가 불가함 (paymentId 재활용 처리라 처리 불가 발생)
             order.updateStatus(OrderStatus.FAIL);
 
-            return ConfirmPaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
+            return PaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
         }
 
-        return ConfirmPaymentResponse.register(
+        return PaymentResponse.register(
                 true,
                 order.getOrderId().toString(),
                 PaymentStatus.COMPLETE.name()
