@@ -97,8 +97,8 @@ public class WebhookInternalService {
             log.info("웹훅을 통한 환불 수행: portOneId - {}", portOneId);
             return refundService.processRefund(portOneId);
         } else {
-            // 결제 확정 후 재고, 포인트 부족, 결제 금액 불일치 등으로 인한 확정 실패시 결제 취소
-            log.info("결제 확정 실패 건의 취소 웹훅 처리: portOneId - {}", portOneId);
+            // 결제 확정 후 재고, 포인트 부족, 결제 금액 불일치 등으로 인한 확정 실패시 결제 취소 또는 기처리 건
+            log.info("결제 확정 실패 건 또는 기처리 건의 취소 웹훅 처리: portOneId - {}", portOneId);
             payment.updateStatus(PaymentStatus.CANCELLED);
             return PaymentResponse.register(true, portOneId, PaymentStatus.CANCELLED.name());
         }

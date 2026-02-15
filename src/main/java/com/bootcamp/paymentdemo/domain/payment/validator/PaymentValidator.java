@@ -26,7 +26,6 @@ public class PaymentValidator {
         // 포인트 검증: request 값 우선, 없으면 order에 저장된 값 사용
         Long pointsToValidate = (requestedPoints != null && requestedPoints > 0) ? requestedPoints : order.getUsedPoints();
 
-        validateZeroActualPrice(order);
         validatePoint(member, pointsToValidate);
         validateStock(productOrderList);
     }
@@ -72,14 +71,6 @@ public class PaymentValidator {
             if (product.getStock() < productOrder.getQuantity()) {
                 throw new ServiceErrorException(ERR_NOT_ENOUGH_STOCK);
             }
-        }
-    }
-
-    // 결제 시도시 0원 금액 검증
-    // Portone 우회 결제가 필요한데, front-end 수정 필요로 우선 막음
-    private void validateZeroActualPrice(Order order) {
-        if (order.getFinalAmount() <= 0) {
-            throw new ServiceErrorException(ERR_ZERO_ACTUAL_PRICE);
         }
     }
 }

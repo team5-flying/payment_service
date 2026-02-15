@@ -55,7 +55,6 @@ public class PaymentService {
 
         // 포인트 사용 정보에 따라 포인트 적립
         Long usedPoints = (request.getPointsToUse() != null && request.getPointsToUse() > 0) ? request.getPointsToUse() : 0L;
-
         order.updateUsedPoints(usedPoints);
 
         Long earnedPoints = pointService.calculateEarnedPoints(
@@ -76,9 +75,21 @@ public class PaymentService {
             );
         }
 
-        // 결제 생성, 저장, 응답
-        Payment payment = Payment.register(order, request.getTotalAmount());
+        // 결제 생성, 저장
+        Payment payment = Payment.register(order, order.getFinalAmount());
         Payment savedPayment = paymentRepository.save(payment);
+
+        // 0원 결제 (포인트 전액 결제)
+        if (order.getFinalAmount() == 0) {
+            log.info("0원 결제 확정 처리: portOneId - {}", savedPayment.getPortOneId());
+            PaymentResponse confirmResult = confirmPayment(savedPayment.getPortOneId());
+            return CreatePaymentResponse.register(
+                    confirmResult.getSuccess()
+                    , savedPayment.getPortOneId()
+                    , confirmResult.getStatus()
+            );
+        }
+
         return CreatePaymentResponse.register(
                 true
                 , savedPayment.getPortOneId()
@@ -128,7 +139,7 @@ public class PaymentService {
             pointService.processPointInOrder(member, order);
 
             // 회원 구매금액 누적, 등급 변경
-            member.addTotalPriceAmount(payment.getPriceSnap());
+            member.addTotalPriceAmount(order.getFinalAmount());
             Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
             member.updateGrade(newGrade);
         } catch (Exception e) {
