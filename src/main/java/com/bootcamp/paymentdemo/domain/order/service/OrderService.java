@@ -11,6 +11,7 @@ import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderNumberSequence;
+import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderNumberSequenceRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
@@ -39,11 +40,7 @@ public class OrderService {
 
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        Member member = memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
-                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
-        );
+        Member member = getCurrentMember();
 
         // 주문번호 생성
         String dateSeq = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -120,9 +117,10 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderGetResponse> findAll() {
-        List<Order> orders = orderRepository.findAll()
-                .stream()
-                .filter(order -> !order.isDeleted()).toList(); // 삭제된 주문 제외
+
+        Member member = getCurrentMember();
+
+        List<Order> orders = orderRepository.findAllByMemberAndDeletedFalse(member);
 
         return orders.stream()
                 .map(order ->
@@ -144,7 +142,10 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderGetResponse findOne(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(
+
+        Member member = getCurrentMember();
+
+        Order order = orderRepository.findByOrderIdAndMemberAndDeletedFalse(orderId, member).orElseThrow(
                 () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_ORDER)
         );
 
@@ -161,6 +162,14 @@ public class OrderService {
                 , order.getCreatedAt()
                 , order.isDeleted()
                 , order.getDeletedAt()
+        );
+    }
+
+    private Member getCurrentMember() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
+                () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
     }
 }
