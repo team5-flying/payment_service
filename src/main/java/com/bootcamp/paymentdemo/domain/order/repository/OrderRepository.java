@@ -11,5 +11,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findAllByMemberAndDeletedFalse(Member member);
     Optional<Order> findByOrderIdAndDeletedFalse(Long orderId);
     Optional<Order> findByOrderIdAndMemberAndDeletedFalse(Long orderId, Member member);
-    Optional<Order> findByOrderNumberAndDeletedFalse(String orderNo);
 }
