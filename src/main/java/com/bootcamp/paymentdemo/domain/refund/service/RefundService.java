@@ -62,9 +62,7 @@ public class RefundService {
             member.subtractTotalPriceAmount(order.getFinalAmount());
         }
 
-        // 등급 재계산
-        Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
-        member.updateGrade(newGrade);
+        // 결제에 사용한 포인트 복구
         handlePointRefund(member, order);
 
         // 재고 복구
@@ -92,6 +90,10 @@ public class RefundService {
         if (payment.getStatus() != PaymentStatus.COMPLETE) {
             throw new ServiceErrorException(ErrorEnum.ERR_INVALID_REFUND_STATUS);
         }
+
+        if (payment.getOrder().getStatus() == OrderStatus.CONFIRMED) {
+            throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_CONFIRMED);
+        }
     }
 
     private void handlePointRefund(Member member, Order order) {
@@ -100,13 +102,6 @@ public class RefundService {
             member.addPoint(order.getUsedPoints());
             memberPointLogRepository.save(MemberPointLog.create(
                     order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
-        }
-
-        // 적립 포인트 취소(회수)
-        if (order.getEarnedPoints() > 0) {
-            member.minusPoint(order.getEarnedPoints());
-            memberPointLogRepository.save(MemberPointLog.create(
-                    order.getOrderNumber(), order.getEarnedPoints(), MemberPointLogStatus.CANCEL_EARN, member));
         }
     }
 }

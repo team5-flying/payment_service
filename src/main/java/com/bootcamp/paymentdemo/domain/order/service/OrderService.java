@@ -5,10 +5,7 @@ import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
-import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateRequest;
-import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateResponse;
-import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
-import com.bootcamp.paymentdemo.domain.order.dto.OrderItemRequest;
+import com.bootcamp.paymentdemo.domain.order.dto.*;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderNumberSequence;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
@@ -16,6 +13,8 @@ import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderNumberSequenceRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.domain.order.repository.ProductOrderRepository;
+import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
+import com.bootcamp.paymentdemo.domain.point.service.PointService;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +27,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -37,6 +38,7 @@ public class OrderService {
     private final ProductOrderRepository productOrderRepository;
     private final MemberRepository memberRepository;
     private final OrderNumberSequenceRepository orderNumberSequenceRepository;
+    private final PointService pointService;
 
     @Transactional
     public OrderCreateResponse save(OrderCreateRequest request) {
@@ -171,5 +173,32 @@ public class OrderService {
         return memberRepository.findByEmailAndDeletedFalse(email).orElseThrow(
                 () -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_MEMBER)
         );
+    }
+
+    // 주문 확정
+    @Transactional
+    public OrderConfirmResponse confirmOrder(Long orderId) {
+        Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)
+                .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_ORDER));
+
+        // COMPLETE 건만 확정 하도록 수행
+        if (order.getStatus() != OrderStatus.COMPLETE) {
+            throw new ServiceErrorException(ERR_NOT_COMPLETE_ORDER);
+        }
+
+        Member member = memberRepository.findByIdWithLock(order.getMember().getMemberId()).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_MEMBER));
+
+        // 포인트 적립
+        pointService.earnPoint(member, order);
+
+        // 회원 구매금액 누적, 등급 변경
+        member.addTotalPriceAmount(order.getFinalAmount());
+        Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
+        member.updateGrade(newGrade);
+
+        // 주문 상태 확정으로 변경
+        order.updateStatus(OrderStatus.CONFIRMED);
+
+        return OrderConfirmResponse.register(String.valueOf(orderId), OrderStatus.CONFIRMED.name());
     }
 }

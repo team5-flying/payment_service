@@ -1,5 +1,7 @@
 package com.bootcamp.paymentdemo.domain.order.controller;
 
+import com.bootcamp.paymentdemo.common.dto.BaseResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.OrderConfirmResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateRequest;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderCreateResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.OrderGetResponse;
@@ -38,5 +40,12 @@ public class OrderController {
             @PathVariable Long orderId
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(orderService.findOne(orderId));
+    }
+
+    @PostMapping("/{orderId}/confirm")
+    public ResponseEntity<BaseResponse<OrderConfirmResponse>> confirm(@PathVariable Long orderId) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                BaseResponse.success(String.valueOf(HttpStatus.OK.value()), null, orderService.confirmOrder(orderId))
+        );
     }
 }

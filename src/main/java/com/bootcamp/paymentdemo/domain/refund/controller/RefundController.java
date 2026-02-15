@@ -1,8 +1,10 @@
 package com.bootcamp.paymentdemo.domain.refund.controller;
 
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
+import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.payment.dto.PaymentResponse;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
+import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
 import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
@@ -15,8 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.ERR_FAIL_REFUND;
-import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.ERR_NOT_FOUND_PAYMENT;
+import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.*;
 
 @Slf4j
 @RestController
@@ -36,7 +37,11 @@ public class RefundController {
         Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(paymentId)
                 .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
 
-        // 0원 결제가 아닌 경우에만 PortOne 취소 호출
+        if (payment.getOrder().getStatus() != OrderStatus.COMPLETE) {
+            throw new ServiceErrorException(ERR_INVALID_REFUND_STATUS);
+        }
+
+        // 0원 결제가 아닌 경우 PortOne 취소 호출
         if (payment.getOrder().getFinalAmount() > 0) {
             portOneService.cancelPayment(paymentId, "사용자 요청 환불");
         }

@@ -51,6 +51,15 @@ public class WebhookExternalService {
         // 트랜잭션 프로세스 처리
         PaymentResponse paymentResponse = webhookInternalService.webhookInternalProcess(webhookId, request, actualAmount);
 
+        // 웹훅 처리 결과 로깅
+        if (paymentResponse.getSuccess()) {
+            log.info("웹훅 처리 완료:\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n message - {}",
+                    portOneId, request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+        } else {
+            log.info("웹훅 처리 실패 혹은 무시:\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n message - {}",
+                    portOneId, request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+        }
+
         // 결제 확정 처리 중 실패할 경우 포트원 결제 취소 API 호출
         if(!paymentResponse.getSuccess() && request.getStatus().equals("PAID")) {
             portOneService.cancelPayment(request.getPaymentId(), "결제 확정 실패 : 결제건의 재고 또는 포인트 부족 또는 최종 결제 금액 상충으로 인한 실패");

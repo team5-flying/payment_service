@@ -10,6 +10,7 @@ public class PaymentResponse {
     private Boolean success;
     private String orderId;
     private String status;
+    private String message;
 
     public static PaymentResponse register(
             Boolean success,
@@ -20,6 +21,20 @@ public class PaymentResponse {
         response.success = success;
         response.orderId = orderId;
         response.status = status;
+        return response;
+    }
+
+    public static PaymentResponse register(
+            Boolean success,
+            String orderId,
+            String status,
+            String message
+    ) {
+        PaymentResponse response = new PaymentResponse();
+        response.success = success;
+        response.orderId = orderId;
+        response.status = status;
+        response.message = message;
         return response;
     }
 }

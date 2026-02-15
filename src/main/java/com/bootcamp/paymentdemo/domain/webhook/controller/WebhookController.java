@@ -29,7 +29,7 @@ public class WebhookController {
         // PortOne SDK 에서 Json Raw text 가 필요하여 후속 처리용 ObjectMapper
         WebhookRequest request = objectMapper.readValue(rawBody, WebhookRequest.class);
 
-        log.info("V2 웹훅 수신 확인 - paymentId: {}\n, status: {}\n, signature: {}\n, timestamp: {}\n, rawBody: {}",
+        log.info("V2 웹훅 수신 확인\n paymentId: {}\n status: {}\n, signature: {}\n, timestamp: {}\n, rawBody: {}",
                 request.getPaymentId(), request.getStatus(), signature, timestamp, rawBody);
 
         // webhookId가 없는 경우 paymentId를 대체 키로 사용

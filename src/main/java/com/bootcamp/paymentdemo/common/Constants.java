@@ -22,6 +22,7 @@ public class Constants {
 
     // region 주문 관련 메세지
     public static final String MSG_NOT_FOUND_ORDER = "주문을 찾을 수 없습니다";
+    public static final String MSG_NOT_COMPLETE_ORDER = "주문이 완료 상태가 아닙니다";
     public static final String MSG_NOT_FOUND_ORDER_PRODUCT = "주문하려는 상품을 찾을 수 없습니다";
     // endregion
 
@@ -33,15 +34,12 @@ public class Constants {
     public static final String MSG_NOT_ENOUGH_STOCK = "주문한 상품의 재고가 부족합니다";
     public static final String MSG_NOT_ENOUGH_POINT = "주문 시 사용할 포인트 보다 보유한 포인트가 적습니다";
     public static final String MSG_NOT_SUCCESS_PAYMENT = "결제에 실패하였습니다";
-    public static final String MSG_INVALID_FINAL_AMOUNT = "결제된 금액과 주문의 최종 금액이 일치하지 않습니다";
-
     // endregion
 
     // region 환불 관련 메세지
     public static final String MSG_NOT_FOUND_PAYMENT = "존재하지 않는 결제 정보입니다";
-    public static final String MSG_ALREADY_CANCELLED = "이미 환불로 취소된 결제입니다";
-    public static final String MSG_NOT_PAID = "결제가 완료된 건이 아닙니다";
     public static final String MSG_INVALID_REFUND_STATUS = "환불 가능한 결제 상태가 아닙니다";
+    public static final String MSG_ALREADY_CONFIRM = "이미 구매 확정된 건입니다, 환불할 수 없습니다";
     public static final String MSG_FAIL_REFUND = "결제 취소 요청이 실패하였습니다";
     // endregion
 

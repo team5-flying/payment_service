@@ -1,8 +1,10 @@
 package com.bootcamp.paymentdemo.domain.payment.service;
 
+import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
+import com.bootcamp.paymentdemo.domain.member.repository.MemberRepository;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
@@ -41,6 +43,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final ProductOrderRepository productOrderRepository;
     private final ProductRepository productRepository;
+    private final MemberRepository memberRepository;
 
     // 결제 시도
     @Transactional
@@ -82,7 +85,7 @@ public class PaymentService {
         // 0원 결제 (포인트 전액 결제)
         if (order.getFinalAmount() == 0) {
             log.info("0원 결제 확정 처리: portOneId - {}", savedPayment.getPortOneId());
-            PaymentResponse confirmResult = confirmPayment(savedPayment.getPortOneId());
+            PaymentResponse confirmResult = completePayment(savedPayment.getPortOneId());
             return CreatePaymentResponse.register(
                     confirmResult.getSuccess()
                     , savedPayment.getPortOneId()
@@ -97,25 +100,25 @@ public class PaymentService {
         );
     }
 
-    // 결제 확정
+    // 결제 완료
     @Transactional
-    public PaymentResponse confirmPayment(String paymentId) {
+    public PaymentResponse completePayment(String paymentId) {
         Payment payment = paymentRepository.findByPortOneIdWithLock(paymentId)
                 .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PAYMENT));
 
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
         // 멱등성 처리
-        if (payment.getStatus().equals(PaymentStatus.COMPLETE)) {
+        if (payment.getStatus() == PaymentStatus.COMPLETE) {
             return PaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
         }
 
-        if (payment.getStatus().equals(PaymentStatus.FAIL)) {
+        if (payment.getStatus() == PaymentStatus.FAIL) {
             return PaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
         }
 
         Order order = payment.getOrder();
-        Member member = order.getMember();
+        Member member = memberRepository.findByIdWithLock(order.getMember().getMemberId()).orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_MEMBER));
 
         try {
             // 재고 및 포인트 재검증
@@ -135,18 +138,13 @@ public class PaymentService {
                 product.updateStock(productOrder.getQuantity());
             }
 
-            // 포인트 적립 및 차감 처리
-            pointService.processPointInOrder(member, order);
-
-            // 회원 구매금액 누적, 등급 변경
-            member.addTotalPriceAmount(order.getFinalAmount());
-            Grade newGrade = Grade.determineGrade(member.getTotalPriceAmount());
-            member.updateGrade(newGrade);
+            // 포인트 차감만 처리
+            pointService.usePoint(member, order);
         } catch (Exception e) {
-            log.error("결제 확정 진행 중 오류 : {}", e.getMessage());
+            log.error("결제 완료 진행 중 오류 : {}", e.getMessage());
             payment.updateStatus(PaymentStatus.FAIL);
 
-            // PaymentId 가 기록된 채로 실패한 경우, 재시도가 불가함 (paymentId 재활용 처리라 처리 불가 발생)
+            // PaymentId 가 PortOne에 기록된 채로 실패한 경우, 재시도가 불가함 (paymentId 재활용 처리라 처리 불가 발생)
             order.updateStatus(OrderStatus.FAIL);
 
             return PaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
