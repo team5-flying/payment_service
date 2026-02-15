@@ -53,6 +53,11 @@ public class PaymentService {
                 .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_ORDER));
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(order);
 
+        // 이미 결제가 존재하는 주문은 중복 생성 방지
+        if (paymentRepository.findByOrderId(Long.valueOf(request.getOrderId())).isPresent()) {
+            throw new ServiceErrorException(ERR_ALREADY_HAVE_PAYMENT);
+        }
+
         // 검증 (재고, 포인트)
         paymentValidator.validateForCreate(order.getMember(), request.getPointsToUse(), order, productOrderList);
 
@@ -66,17 +71,6 @@ public class PaymentService {
                 order.getMember().getGrade().getPointRate()
         );
         order.updateEarnedPoints(earnedPoints);
-
-        // 기존 결제 확인 (결제 창 닫았다가 재시도한 경우)
-        Optional<Payment> existsPayment = paymentRepository.findByOrderId(Long.valueOf(request.getOrderId()));
-        if (existsPayment.isPresent()) {
-            Payment existingPayment = existsPayment.get();
-            return CreatePaymentResponse.register(
-                    true,
-                    existingPayment.getPortOneId(),
-                    existingPayment.getStatus().name()
-            );
-        }
 
         // 결제 생성, 저장
         Payment payment = Payment.register(order, order.getFinalAmount());

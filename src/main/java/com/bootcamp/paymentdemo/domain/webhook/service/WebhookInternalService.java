@@ -109,6 +109,7 @@ public class WebhookInternalService {
         // 결제 실패 건 또는 기처리 건의 취소 웹훅 처리
         log.info("결제 실패 건 또는 기처리 건의 취소 웹훅 처리: portOneId - {}", portOneId);
         payment.updateStatus(PaymentStatus.CANCELLED);
+        payment.getOrder().updateStatus(OrderStatus.FAIL);
         return PaymentResponse.register(true, portOneId, PaymentStatus.CANCELLED.name()
                 , "결제 실패 건 취소 처리 완료");
     }
@@ -120,7 +121,7 @@ public class WebhookInternalService {
         payment.updateStatus(PaymentStatus.FAIL);
 
         Order order = payment.getOrder();
-        order.updateStatus(OrderStatus.PENDING);
+        order.updateStatus(OrderStatus.FAIL);
 
         return PaymentResponse.register(true, portOneId, PaymentStatus.FAIL.name()
                 , "결제창 진행 중 실패");
