@@ -6,17 +6,17 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class ConfirmPaymentResponse {
+public class PaymentResponse {
     private Boolean success;
     private String orderId;
     private String status;
 
-    public static ConfirmPaymentResponse register(
+    public static PaymentResponse register(
             Boolean success,
             String orderId,
             String status
     ) {
-        ConfirmPaymentResponse response = new ConfirmPaymentResponse();
+        PaymentResponse response = new PaymentResponse();
         response.success = success;
         response.orderId = orderId;
         response.status = status;
