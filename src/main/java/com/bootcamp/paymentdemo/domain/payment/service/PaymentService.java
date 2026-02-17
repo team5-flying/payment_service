@@ -103,12 +103,14 @@ public class PaymentService {
         List<ProductOrder> productOrderList = productOrderRepository.findByOrderAndDeletedFalse(payment.getOrder());
 
         // 멱등성 처리
-        if (payment.getStatus() == PaymentStatus.COMPLETE) {
-            return PaymentResponse.register(true, payment.getPortOneId(), payment.getStatus().name());
-        }
-
-        if (payment.getStatus() == PaymentStatus.FAIL) {
-            return PaymentResponse.register(false, payment.getPortOneId(), payment.getStatus().name());
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            Order order = payment.getOrder();
+            return PaymentResponse.register(
+                    order.getStatus() == OrderStatus.COMPLETE
+                    , String.valueOf(order.getOrderId())
+                    , order.getStatus().name()
+                    , order.getStatus() == OrderStatus.COMPLETE ? "결제 완료" : "결제 실패"
+            );
         }
 
         Order order = payment.getOrder();
@@ -141,13 +143,14 @@ public class PaymentService {
             // PaymentId 가 PortOne에 기록된 채로 실패한 경우, 재시도가 불가함 (paymentId 재활용 처리라 처리 불가 발생)
             order.updateStatus(OrderStatus.FAIL);
 
-            return PaymentResponse.register(false, payment.getPortOneId(), PaymentStatus.FAIL.name());
+            return PaymentResponse.register(false, String.valueOf(payment.getOrder().getOrderId()), OrderStatus.FAIL.name(), "결제 실패");
         }
 
         return PaymentResponse.register(
-                true,
-                order.getOrderId().toString(),
-                PaymentStatus.COMPLETE.name()
+                true
+                , order.getOrderId().toString()
+                , OrderStatus.COMPLETE.name()
+                , "결제 완료"
         );
     }
 }

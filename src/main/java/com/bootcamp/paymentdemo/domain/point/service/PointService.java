@@ -1,6 +1,5 @@
 package com.bootcamp.paymentdemo.domain.point.service;
 
-import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.point.entity.MemberPointLog;
@@ -9,8 +8,6 @@ import com.bootcamp.paymentdemo.domain.point.repository.MemberPointLogRepository
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import static com.bootcamp.paymentdemo.common.exception.ErrorEnum.ERR_SAVED_DATA_FAILED;
 
 @Slf4j
 @Service
@@ -27,7 +24,7 @@ public class PointService {
     // 포인트 적립 및 로그 생성
     public void earnPoint(Member member, Order order) {
         member.addPoint(order.getEarnedPoints());
-        MemberPointLog earnLog = MemberPointLog.create(
+        MemberPointLog earnLog = MemberPointLog.register(
                 order.getOrderNumber(),
                 order.getEarnedPoints(),
                 MemberPointLogStatus.SAVE,
@@ -39,7 +36,7 @@ public class PointService {
     // 포인트 차감 및 로그 생성
     public void usePoint(Member member, Order order) {
         member.minusPoint(order.getUsedPoints());
-        MemberPointLog useLog = MemberPointLog.create(
+        MemberPointLog useLog = MemberPointLog.register(
                 order.getOrderNumber(),
                 order.getUsedPoints(),
                 MemberPointLogStatus.USE,

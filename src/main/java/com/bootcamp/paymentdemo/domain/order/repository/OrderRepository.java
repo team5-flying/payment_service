@@ -13,5 +13,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findAllByMemberAndDeletedFalse(Member member);
     Optional<Order> findByOrderIdAndDeletedFalse(Long orderId);
     Optional<Order> findByOrderIdAndMemberAndDeletedFalse(Long orderId, Member member);
-    List<Order> findByStatusAndOrderAtAfter(OrderStatus status, LocalDateTime dateTime);
+    List<Order> findByStatusAndUpdatedAtBefore(OrderStatus status, LocalDateTime dateTime);
 }

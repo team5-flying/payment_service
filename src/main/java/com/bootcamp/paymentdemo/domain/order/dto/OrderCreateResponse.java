@@ -2,28 +2,15 @@ package com.bootcamp.paymentdemo.domain.order.dto;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderCreateResponse {
-
-    private Long memberId;
-    private String orderId;
-    private Long totalAmount;
-    private String orderNumber;
-
-    private OrderCreateResponse(
-            Long memberId,
-            String orderId,
-            Long totalAmount,
-            String orderNumber
-    ) {
-        this.memberId = memberId;
-        this.orderId = orderId;
-        this.totalAmount = totalAmount;
-        this.orderNumber = orderNumber;
-    }
+    private final Long memberId;
+    private final String orderId;
+    private final Long totalAmount;
+    private final String orderNumber;
 
     public static OrderCreateResponse register(
             Long memberId,

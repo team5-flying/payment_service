@@ -52,17 +52,26 @@ public class WebhookExternalService {
         PaymentResponse paymentResponse = webhookInternalService.webhookInternalProcess(webhookId, request, actualAmount);
 
         // 웹훅 처리 결과 로깅
-        if (paymentResponse.getSuccess()) {
-            log.info("웹훅 처리 완료:\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n message - {}",
-                    portOneId, request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
-        } else {
-            log.info("웹훅 처리 실패 혹은 무시:\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n message - {}",
-                    portOneId, request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
-        }
+        loggingWebhook(request, paymentResponse);
 
         // 결제 확정 처리 중 실패할 경우 포트원 결제 취소 API 호출
         if(!paymentResponse.getSuccess() && request.getStatus().equals("PAID")) {
             portOneService.cancelPayment(request.getPaymentId(), "결제 확정 실패 : 결제건의 재고 또는 포인트 부족 또는 최종 결제 금액 상충으로 인한 실패");
+        }
+    }
+
+    private void loggingWebhook(WebhookRequest request, PaymentResponse paymentResponse) {
+        if(request.getStatus().equals("PAID")) {
+            if (paymentResponse.getSuccess()) {
+                log.info("결제 완료 웹훅 처리 :\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n 메세지 - {}",
+                        request.getPaymentId(), request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+            } else {
+                log.info("결제 완료 실패 웹훅 처리 (결제 취소됨) :\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n 메세지 - {}",
+                        request.getPaymentId(), request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+            }
+        } else {
+            log.info("결제 취소, 실패의 웹훅 처리 :\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n 메세지 - {}",
+                    request.getPaymentId(), request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
         }
     }
 

@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SaveMemberResponse {
-
     private final Long memberId;
     private final String name;
     private final String email;

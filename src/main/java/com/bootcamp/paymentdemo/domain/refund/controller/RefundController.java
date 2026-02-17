@@ -46,11 +46,6 @@ public class RefundController {
             portOneService.cancelPayment(paymentId, "사용자 요청 환불");
         }
 
-        if (payment.getOrder().getFinalAmount() == 0) {
-            // 0원 결제의 경우엔 복구만 시켜주면 됨
-            refundService.processRefund(paymentId);
-        }
-
         if(payment.getOrder().getFinalAmount() < 0) {
             log.error("결제금 음수 환불 수행됨, PaymentId - {}", paymentId);
             throw new ServiceErrorException(ERR_FAIL_REFUND);

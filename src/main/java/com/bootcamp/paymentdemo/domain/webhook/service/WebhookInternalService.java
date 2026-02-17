@@ -52,7 +52,7 @@ public class WebhookInternalService {
             } else if ("FAILED".equals(request.getStatus())) {
                 response = failedProcess(portOneId, payment);
             } else {
-                return PaymentResponse.register(false, portOneId, request.getStatus(), "지원하지 않는 웹훅 상태 : " + request.getStatus());
+                return PaymentResponse.register(false, String.valueOf(payment.getOrder().getOrderId()), request.getStatus(), "지원하지 않는 웹훅 상태 : " + request.getStatus());
             }
 
             webhook.complete();
@@ -86,7 +86,7 @@ public class WebhookInternalService {
             log.error("실결제 금액 : {}, 주문 최종 금액 : {}, portOneId : {}", actualAmount, order.getFinalAmount(), portOneId);
             payment.updateStatus(PaymentStatus.FAIL);
             order.updateStatus(OrderStatus.FAIL);
-            return PaymentResponse.register(false, portOneId, PaymentStatus.FAIL.name()
+            return PaymentResponse.register(false, String.valueOf(order.getOrderId()), OrderStatus.FAIL.name()
                     , "결제 금액 불일치 - 실 결제금액 : " + actualAmount + ", 주문금액: " + order.getFinalAmount());
         }
     }
@@ -94,23 +94,25 @@ public class WebhookInternalService {
     // CANCELLED status 일 경우 환불 처리 수행
     private PaymentResponse cancelledProcess(String portOneId, Payment payment) {
         if (payment.getStatus() == PaymentStatus.COMPLETE) {
-            // 구매 확정 건은 환불 불가
-            if (payment.getOrder().getStatus() == OrderStatus.CONFIRMED) {
-                log.info("구매 확정 건 환불 불가: portOneId - {}", portOneId);
-                return PaymentResponse.register(false, portOneId, PaymentStatus.CANCELLED.name()
-                        , "구매 확정 건 환불 불가");
-            }
-
             // 정상 결제 확정 건 환불
             log.info("웹훅을 통한 환불 수행: portOneId - {}", portOneId);
             return refundService.processRefund(portOneId);
         }
 
-        // 결제 실패 건 또는 기처리 건의 취소 웹훅 처리
-        log.info("결제 실패 건 또는 기처리 건의 취소 웹훅 처리: portOneId - {}", portOneId);
+        if (payment.getStatus() == PaymentStatus.CANCELLED) {
+            log.info("웹훅을 통한 기처리 건 처리: portOneId - {}", portOneId);
+            return PaymentResponse.register(true
+                   , String.valueOf(payment.getOrder().getOrderId())
+                   , payment.getOrder().getStatus().name()
+                   , "결제 취소 처리 완료"
+            );
+        }
+
+        // 결제 실패
+        log.info("웹훅을 통한 결제 실패 건 처리: portOneId - {}", portOneId);
         payment.updateStatus(PaymentStatus.CANCELLED);
         payment.getOrder().updateStatus(OrderStatus.FAIL);
-        return PaymentResponse.register(true, portOneId, PaymentStatus.CANCELLED.name()
+        return PaymentResponse.register(false, String.valueOf(payment.getOrder().getOrderId()), OrderStatus.FAIL.name()
                 , "결제 실패 건 취소 처리 완료");
     }
 
@@ -123,7 +125,7 @@ public class WebhookInternalService {
         Order order = payment.getOrder();
         order.updateStatus(OrderStatus.FAIL);
 
-        return PaymentResponse.register(true, portOneId, PaymentStatus.FAIL.name()
+        return PaymentResponse.register(false, String.valueOf(order.getOrderId()), OrderStatus.FAIL.name()
                 , "결제창 진행 중 실패");
     }
 }

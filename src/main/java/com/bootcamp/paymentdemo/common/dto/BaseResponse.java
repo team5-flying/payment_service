@@ -3,36 +3,22 @@ package com.bootcamp.paymentdemo.common.dto;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonPropertyOrder({"success", "code", "message", "data"})
 public class BaseResponse<T> {
-    private boolean success;
-    private String code;
-    private String message;
-    private T data;
+    private final boolean success;
+    private final String code;
+    private final String message;
+    private final T data;
 
     public static <T> BaseResponse<T> success(String code, String message, T data) {
-        BaseResponse<T> response = new BaseResponse<>();
-
-        response.success = true;
-        response.code = code;
-        response.message = message;
-        response.data = data;
-
-        return response;
+        return new BaseResponse<>(true, code, message, data);
     }
 
     public static <T> BaseResponse<T> fail(String code, String message, T data) {
-        BaseResponse<T> response = new BaseResponse<>();
-
-        response.success = false;
-        response.code = code;
-        response.message = message;
-        response.data = data;
-
-        return response;
+        return new BaseResponse<>(false, code, message, data);
     }
 }

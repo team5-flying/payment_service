@@ -1,18 +1,17 @@
 package com.bootcamp.paymentdemo.common.exception.dto;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @Getter
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class ErrorExceptionResponse {
-    private HttpStatus httpStatus;
-    private String message;
+    private final HttpStatus httpStatus;
+    private final String message;
 
     public static ErrorExceptionResponse register(HttpStatus httpStatus, String message) {
-        ErrorExceptionResponse response = new ErrorExceptionResponse();
-        response.httpStatus = httpStatus;
-        response.message = message;
-
-        return response;
+        return new ErrorExceptionResponse(httpStatus, message);
     }
 }

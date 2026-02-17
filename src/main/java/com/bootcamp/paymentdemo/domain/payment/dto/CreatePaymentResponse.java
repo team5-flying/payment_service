@@ -2,20 +2,14 @@ package com.bootcamp.paymentdemo.domain.payment.dto;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class CreatePaymentResponse {
-    private Boolean success;
-    private String paymentId;
-    private String status;
-
-    private CreatePaymentResponse(Boolean success, String paymentId, String status) {
-        this.success = success;
-        this.paymentId = paymentId;
-        this.status = status;
-    }
+    private final Boolean success;
+    private final String paymentId;
+    private final String status;
 
     public static CreatePaymentResponse register(Boolean success, String paymentId, String status) {
         return new CreatePaymentResponse(success, paymentId, status);

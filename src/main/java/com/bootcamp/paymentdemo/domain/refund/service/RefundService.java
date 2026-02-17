@@ -3,7 +3,6 @@ package com.bootcamp.paymentdemo.domain.refund.service;
 import com.bootcamp.paymentdemo.common.exception.ErrorEnum;
 import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 
-import com.bootcamp.paymentdemo.domain.member.entity.Grade;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
@@ -43,8 +42,7 @@ public class RefundService {
 
         // 멱등성 처리
         if (payment.getStatus() == PaymentStatus.CANCELLED) {
-            log.info("이미 취소된 결제, portOneId: {}", portOneId);
-            return PaymentResponse.register(true, portOneId, payment.getStatus().name());
+            return PaymentResponse.register(true, String.valueOf(payment.getOrder().getOrderId()), payment.getOrder().getStatus().name(), "취소 성공");
         }
 
         // 결제 취소를 위한 상태 체크 - 결제가 된 건만 수행
@@ -80,9 +78,10 @@ public class RefundService {
         }
 
         return PaymentResponse.register(
-                true,
-                order.getOrderId().toString(),
-                PaymentStatus.COMPLETE.name()
+                true
+                , order.getOrderId().toString()
+                , OrderStatus.CANCELLED.name()
+                , "취소 성공"
         );
     }
 
@@ -90,17 +89,13 @@ public class RefundService {
         if (payment.getStatus() != PaymentStatus.COMPLETE) {
             throw new ServiceErrorException(ErrorEnum.ERR_INVALID_REFUND_STATUS);
         }
-
-        if (payment.getOrder().getStatus() == OrderStatus.CONFIRMED) {
-            throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_CONFIRMED);
-        }
     }
 
     private void handlePointRefund(Member member, Order order) {
         // 사용 포인트 돌려주기
         if (order.getUsedPoints() > 0) {
             member.addPoint(order.getUsedPoints());
-            memberPointLogRepository.save(MemberPointLog.create(
+            memberPointLogRepository.save(MemberPointLog.register(
                     order.getOrderNumber(), order.getUsedPoints(), MemberPointLogStatus.RECOVER, member));
         }
     }

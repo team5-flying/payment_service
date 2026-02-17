@@ -1,13 +1,13 @@
 package com.bootcamp.paymentdemo.domain.member.dto;
 
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SearchMemberResponse {
-
     private final String customerUid;
     private final String email;
     private final String name;

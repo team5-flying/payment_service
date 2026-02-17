@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class LoginMemberResponse {
-
     private final Boolean success;
     private final Long id;
     private final String email;

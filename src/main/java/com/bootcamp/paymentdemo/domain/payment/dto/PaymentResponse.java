@@ -2,27 +2,17 @@ package com.bootcamp.paymentdemo.domain.payment.dto;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentResponse {
-    private Boolean success;
-    private String orderId;
-    private String status;
-    private String message;
-
-    public static PaymentResponse register(
-            Boolean success,
-            String orderId,
-            String status
-    ) {
-        PaymentResponse response = new PaymentResponse();
-        response.success = success;
-        response.orderId = orderId;
-        response.status = status;
-        return response;
-    }
+    // 결제 완료와 취소가 같은 Response 를 공유 중
+    // 각각의 케이스의 성공 여부
+    private final Boolean success;
+    private final String orderId;
+    private final String status;
+    private final String message;
 
     public static PaymentResponse register(
             Boolean success,
@@ -30,11 +20,6 @@ public class PaymentResponse {
             String status,
             String message
     ) {
-        PaymentResponse response = new PaymentResponse();
-        response.success = success;
-        response.orderId = orderId;
-        response.status = status;
-        response.message = message;
-        return response;
+        return new PaymentResponse(success, orderId, status, message);
     }
 }

@@ -4,54 +4,26 @@ import com.bootcamp.paymentdemo.common.entity.Base;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderStatus;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderGetResponse extends Base {
 
-    private String orderId;
-    private Long memberId;
-    private String orderNumber;
-    private Long totalAmount;
-    private Long usedPoints;
-    private Long finalAmount;
-    private Long earnedPoints;
-    private String currency;
-    private OrderStatus status;
-    private LocalDateTime orderAt;
-    private Boolean deleted;
-    private LocalDateTime deletedAt;
-
-    private OrderGetResponse(
-            String orderId,
-            Long memberId,
-            String orderNumber,
-            Long totalAmount,
-            Long usedPoints,
-            Long finalAmount,
-            Long earnedPoints,
-            String currency,
-            OrderStatus status,
-            LocalDateTime orderAt,
-            Boolean deleted,
-            LocalDateTime deletedAt
-    ) {
-        this.orderId = orderId;
-        this.memberId = memberId;
-        this.orderNumber = orderNumber;
-        this.totalAmount = totalAmount;
-        this.usedPoints = usedPoints;
-        this.finalAmount = finalAmount;
-        this.earnedPoints = earnedPoints;
-        this.currency = currency;
-        this.status = status;
-        this.orderAt = orderAt;
-        this.deleted = deleted;
-        this.deletedAt = deletedAt;
-    }
+    private final String orderId;
+    private final Long memberId;
+    private final String orderNumber;
+    private final Long totalAmount;
+    private final Long usedPoints;
+    private final Long finalAmount;
+    private final Long earnedPoints;
+    private final String currency;
+    private final OrderStatus status;
+    private final LocalDateTime orderAt;
+    private final Boolean deleted;
+    private final LocalDateTime deletedAt;
 
     public static OrderGetResponse register(
             String orderId,

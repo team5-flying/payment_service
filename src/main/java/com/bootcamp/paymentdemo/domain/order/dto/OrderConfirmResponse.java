@@ -2,21 +2,18 @@ package com.bootcamp.paymentdemo.domain.order.dto;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderConfirmResponse {
-    private String orderId;
-    private String status;
+    private final String orderId;
+    private final String status;
 
     public static OrderConfirmResponse register(
             String orderId,
             String status
     ) {
-        OrderConfirmResponse response = new OrderConfirmResponse();
-        response.orderId = orderId;
-        response.status = status;
-        return response;
+        return new OrderConfirmResponse(orderId, status);
     }
 }
