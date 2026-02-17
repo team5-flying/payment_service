@@ -5,11 +5,19 @@ import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.payment.dto.PaymentResponse;
 import com.bootcamp.paymentdemo.domain.webhook.dto.WebhookRequest;
 import com.bootcamp.paymentdemo.domain.webhook.repository.WebhookRepository;
+import io.portone.sdk.server.errors.WebhookVerificationException;
+import io.portone.sdk.server.webhook.Webhook;
+import io.portone.sdk.server.webhook.WebhookVerifier;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @Slf4j
 @Service
@@ -22,16 +30,16 @@ public class WebhookExternalService {
     @Value("${portone.api.webhook-secret}")
     private String webhookSecret;
 
-    public void webhookExternalProcess(String recWebhookId, String signature, WebhookRequest request) {
+    public void webhookExternalProcess(String webhookId, String signature, String timeStamp, String rawBody, WebhookRequest request) {
         String portOneId = request.getPaymentId();
         long actualAmount = 0L;
 
         // 시그니처 검증
-        validateSignature(signature, recWebhookId);
+        validateSignature(webhookId, signature, timeStamp, rawBody);
 
         // 멱등성 검증
-        if (webhookRepository.existsByRecWebhookId(recWebhookId)) {
-            log.info("중복 웹훅 멱등성 처리, 수신된 웹훅 ID: {}", recWebhookId);
+        if (webhookRepository.existsByRecWebhookId(webhookId)) {
+            log.info("중복 웹훅 멱등성 처리, 수신된 웹훅 ID: {}", webhookId);
             return;
         }
 
@@ -41,7 +49,10 @@ public class WebhookExternalService {
         }
 
         // 트랜잭션 프로세스 처리
-        PaymentResponse paymentResponse = webhookInternalService.webhookInternalProcess(recWebhookId, request, actualAmount);
+        PaymentResponse paymentResponse = webhookInternalService.webhookInternalProcess(webhookId, request, actualAmount);
+
+        // 웹훅 처리 결과 로깅
+        loggingWebhook(request, paymentResponse);
 
         // 결제 확정 처리 중 실패할 경우 포트원 결제 취소 API 호출
         if(!paymentResponse.getSuccess() && request.getStatus().equals("PAID")) {
@@ -49,18 +60,36 @@ public class WebhookExternalService {
         }
     }
 
-    private void validateSignature(String signature, String recWebhookId) {
+    private void loggingWebhook(WebhookRequest request, PaymentResponse paymentResponse) {
+        if(request.getStatus().equals("PAID")) {
+            if (paymentResponse.getSuccess()) {
+                log.info("결제 완료 웹훅 처리 :\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n 메세지 - {}",
+                        request.getPaymentId(), request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+            } else {
+                log.info("결제 완료 실패 웹훅 처리 (결제 취소됨) :\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n 메세지 - {}",
+                        request.getPaymentId(), request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+            }
+        } else {
+            log.info("결제 취소, 실패의 웹훅 처리 :\n portOneId - {}\n 웹훅 상태 - {}\n 처리 결과 - {}\n 메세지 - {}",
+                    request.getPaymentId(), request.getStatus(), paymentResponse.getStatus(), paymentResponse.getMessage());
+        }
+    }
+
+    private void validateSignature(String webhookId, String signature, String timestamp, String rawBody) {
         // 시그니처 검증
         if (signature == null) {
-            log.error("웹훅 시그니처가 없습니다");
+            log.error("웹훅 시그니처가 없음");
             throw new ServiceErrorException(ErrorEnum.ERR_WEBHOOK_INVALID_SIGNATURE);
         }
 
-        if (!signature.contains(",") && !signature.equals(webhookSecret)) {
-            log.error("웹훅 시그니처 형식이 잘못되었거나 불일치 합니다 ID: {}", recWebhookId);
+        try {
+            // 웹훅 검증기 (PortOne SDK 제공)
+            WebhookVerifier verifier = new WebhookVerifier(webhookSecret);
+            verifier.verify(rawBody, webhookId, signature, timestamp);
+            log.info("웹훅 검증 통과");
+        } catch (WebhookVerificationException e) {
+            log.error("웹훅 검증 실패: {}", e.getMessage());
             throw new ServiceErrorException(ErrorEnum.ERR_WEBHOOK_INVALID_SIGNATURE);
-        } else {
-            log.info("웹훅 보안 검증 통과 (또는 테스트 모드)");
         }
     }
 }

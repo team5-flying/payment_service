@@ -444,8 +444,37 @@
                 // 모달 닫기
                 closePointsModal();
 
-                // 1단계: 결제 생성 및 PortOne SDK 호출 (openPortOnePayment 사용)
                 const finalAmount = Math.max(0, orderToProcess.totalAmount - points);
+
+                if(finalAmount === 0) {
+                    // 0원 결제: 생성과 동시에 확정 처리됨
+                    step1 = addPaymentStep(`포인트 전액 결제 중... (포인트: ${points.toLocaleString()}P)`, 'loading');
+
+                    const createPaymentResult = await makeApiRequest('create-payment', {
+                        body: {
+                            orderId: orderToProcess.orderId,
+                            totalAmount: orderToProcess.totalAmount,
+                            pointsToUse: points
+                        }
+                    });
+
+                    if (createPaymentResult.status === 'COMPLETE') {
+                        updatePaymentStep(step1, 'success', `결제 완료 (ID: ${createPaymentResult.paymentId})`);
+                        showNotification('결제가 완료되었습니다! (포인트: ' + points.toLocaleString() + 'P 사용)', 'success');
+                    } else {
+                        updatePaymentStep(step1, 'error', '결제 실패');
+                        showNotification('결제에 실패하였습니다.', 'error');
+                    }
+
+                    setTimeout(async () => {
+                        hidePaymentProcess();
+                        await loadOrders();
+                    }, 3000);
+
+                    return;
+                }
+
+                // 1단계: 결제 생성 및 PortOne SDK 호출 (openPortOnePayment 사용)
                 step1 = addPaymentStep(`결제 시작... (포인트: ${points.toLocaleString()}P, 최종 금액: ${finalAmount.toLocaleString()}원)`, 'loading');
 
                 const paymentData = {

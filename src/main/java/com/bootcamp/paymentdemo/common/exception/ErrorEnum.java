@@ -4,7 +4,6 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import static com.bootcamp.paymentdemo.common.Constants.*;
-import static com.bootcamp.paymentdemo.common.Constants.MSG_ALREADY_CANCELLED;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_FAIL;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_AUTH_WRONG;
 import static com.bootcamp.paymentdemo.common.Constants.MSG_FAIL_REFUND;
@@ -37,23 +36,22 @@ public enum ErrorEnum {
 
     // region 주문 관련
     ERR_NOT_FOUND_ORDER(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_ORDER),
+    ERR_NOT_COMPLETE_ORDER(HttpStatus.CONFLICT, MSG_NOT_COMPLETE_ORDER),
     ERR_NOT_FOUND_ORDER_PRODUCT(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_ORDER_PRODUCT),
     // endregion
 
     // region 결제 관련
     ERR_NOT_ENOUGH_STOCK(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_STOCK),
     ERR_NOT_ENOUGH_POINT(HttpStatus.CONFLICT, MSG_NOT_ENOUGH_POINT),
-    ERR_ZERO_ACTUAL_PRICE(HttpStatus.CONFLICT, MSG_ZERO_ACTUAL_PRICE),
     ERR_NOT_SUCCESS_PAYMENT(HttpStatus.CONFLICT, MSG_NOT_SUCCESS_PAYMENT),
+    ERR_ALREADY_HAVE_PAYMENT(HttpStatus.CONFLICT, MSG_ALREADY_HAVE_PAYMENT),
     // endregion
 
     // region 결제 취소 및 환불 관련
     ERR_NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, MSG_NOT_FOUND_PAYMENT),
-    ERR_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, MSG_ALREADY_CANCELLED),
-    ERR_NOT_PAID(HttpStatus.BAD_REQUEST, MSG_NOT_PAID),
     ERR_INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, MSG_INVALID_REFUND_STATUS),
     ERR_FAIL_REFUND(HttpStatus.BAD_REQUEST, MSG_FAIL_REFUND),
-    ERR_INVALID_FINAL_AMOUNT(HttpStatus.CONFLICT, MSG_INVALID_FINAL_AMOUNT),
+    ERR_ALREADY_CONFIRMED(HttpStatus.BAD_REQUEST, MSG_ALREADY_CONFIRM),
     // endregion
 
     // region 서버 관련

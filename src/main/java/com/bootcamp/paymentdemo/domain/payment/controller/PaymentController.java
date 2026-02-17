@@ -31,6 +31,6 @@ public class PaymentController {
     public ResponseEntity<PaymentResponse> confirmPayment(
             @PathVariable String paymentId
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(paymentService.confirmPayment(paymentId));
+        return ResponseEntity.status(HttpStatus.OK).body(paymentService.completePayment(paymentId));
     }
 }

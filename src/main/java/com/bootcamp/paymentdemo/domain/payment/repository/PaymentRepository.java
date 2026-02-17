@@ -15,7 +15,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             FROM Payment p
             JOIN FETCH p.order o
             WHERE p.deleted = false
-            AND (p.status = 'PENDING' OR p.status = 'FAIL')
             AND o.orderId = :orderId
           """)
     Optional<Payment> findByOrderId(Long orderId);
