@@ -4,10 +4,8 @@ import com.bootcamp.paymentdemo.common.exception.ServiceErrorException;
 import com.bootcamp.paymentdemo.domain.member.entity.Member;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.ProductOrder;
-import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
 import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
-import com.bootcamp.paymentdemo.domain.webhook.service.PortOneService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,8 +20,8 @@ public class PaymentValidator {
     private final ProductRepository productRepository;
 
     // 결제 시도 검증
-    // - request에 포인트가 있으면 request 값으로 검증
-    // - request에 포인트가 없으면 order에 저장된 값으로 검증 (기존 결제 재사용)
+    // request에 포인트가 있으면 request 값으로 검증
+    // request에 포인트가 없으면 order에 저장된 값으로 검증 (결제창만 닫았다 사용하는 기존 결제 재사용 건일 수 있으므로 찾아봐야함)
     public void validateForCreate(Member member, Long requestedPoints, Order order, List<ProductOrder> productOrderList) {
         // 포인트 검증: request 값 우선, 없으면 order에 저장된 값 사용
         Long pointsToValidate = (requestedPoints != null && requestedPoints > 0) ? requestedPoints : order.getUsedPoints();

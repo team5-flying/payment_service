@@ -26,7 +26,6 @@ public class Refund extends Base {
     @Enumerated(EnumType.STRING)
     private RefundStatus status;
 
-    //FIXME 어쩌면 ENUM?
     private String reason;
 
     private LocalDateTime refundAt;
