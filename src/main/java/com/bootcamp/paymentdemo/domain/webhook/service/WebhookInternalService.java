@@ -10,6 +10,9 @@ import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
+import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
+import com.bootcamp.paymentdemo.domain.subscription.entity.BillingStatus;
+import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
 import com.bootcamp.paymentdemo.domain.webhook.dto.WebhookRequest;
 import com.bootcamp.paymentdemo.domain.webhook.entity.Webhook;
 import com.bootcamp.paymentdemo.domain.webhook.entity.WebhookStatus;
@@ -27,16 +30,48 @@ public class WebhookInternalService {
     private final RefundService refundService;
     private final PaymentRepository paymentRepository;
     private final WebhookRepository webhookRepository;
+    private final BillingHistoryRepository billingHistoryRepository;
 
     @Transactional
     public PaymentResponse webhookInternalProcess(String recWebhookId, WebhookRequest request, long actualAmount) {
-        PaymentResponse response;
+        PaymentResponse response = null;
 
         // 웹훅 저장 후 반환
         Webhook webhook = saveWebhook(recWebhookId, request);
 
         // payment 검증 준비
         String portOneId = request.getPaymentId();
+        String status = request.getStatus();
+
+        // 빌링키 발급 관련 웹훅 무시 (paymentId가 없거나 status가 BillingKey로 시작)
+        if (portOneId == null || status.startsWith("BillingKey")) {
+            log.info("빌링키 발급 관련 웹훅. status: {}", status);
+            webhook.complete();
+            return null;
+        }
+
+        // 구독 결제 웹훅 처리
+        if (portOneId.startsWith("PAY-SUB-")) {
+            BillingHistory billingHistory = billingHistoryRepository.findByPortOneId(portOneId)
+                    .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
+
+            // 멱등성
+            if (billingHistory.getStatus() != BillingStatus.COMPLETED) {
+                if ("PAID".equals(status)) {
+                    log.info("웹훅: 구독 결제 성공 확인. portOneId: {}", portOneId);
+                    billingHistory.complete();
+                    billingHistory.getSubscription().renewSubscription();
+                } else {
+                    log.info("웹훅: 구독 결제 실패 확인. portOneId: {}", portOneId);
+                    billingHistory.fail("웹훅 수신: 결제 실패 (" + status + ")");
+                    billingHistory.getSubscription().expireSubscription();
+                }
+            }
+            webhook.complete();
+            return null;
+        }
+
+        // 일반 결제 처리
         Payment payment = paymentRepository.findByPortOneIdAndDeletedFalse(portOneId)
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
 

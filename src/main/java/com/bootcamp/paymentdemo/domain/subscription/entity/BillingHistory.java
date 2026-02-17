@@ -18,7 +18,7 @@ public class BillingHistory {
     private String billingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_id, nullable = false")
+    @JoinColumn(name = "subscription_id", nullable = false)
     private Subscription subscription;
 
     private String portOneId;

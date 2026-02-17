@@ -51,6 +51,7 @@ public class DummyDataInitializer implements CommandLineRunner {
             plans.add(Plan.createPlan("PLAN-BASIC", "베이직 플랜", 10000L, BillingCycle.MONTHLY));
             plans.add(Plan.createPlan("PLAN-PRO", "프로 플랜", 20000L, BillingCycle.MONTHLY));
             plans.add(Plan.createPlan("PLAN-ANNUAL", "연간 플랜", 200000L, BillingCycle.ANNUAL));
+            plans.add(Plan.createPlan("PLAN-TEST", "테스트 플랜", 1000L, BillingCycle.MONTHLY));
             planRepository.saveAll(plans);
         }
     }

@@ -9,9 +9,6 @@ import com.bootcamp.paymentdemo.domain.payment.entity.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.domain.refund.service.RefundService;
-import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
-import com.bootcamp.paymentdemo.domain.subscription.entity.BillingStatus;
-import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
 import com.bootcamp.paymentdemo.domain.webhook.dto.WebhookRequest;
 import com.bootcamp.paymentdemo.domain.webhook.entity.Webhook;
 import com.bootcamp.paymentdemo.domain.webhook.entity.WebhookStatus;
@@ -32,7 +29,6 @@ public class WebhookService {
     private final PaymentService paymentService;
     private final RefundService refundService;
     private final PaymentRepository paymentRepository;
-    private final BillingHistoryRepository billingHistoryRepository;
 
     @Value("${portone.api.webhook-secret}")
     private String webhookSecret;
@@ -64,32 +60,6 @@ public class WebhookService {
         webhookRepository.save(webhook);
 
         String portOneId = request.getPaymentId();
-
-        // 구독 결제 웹훅 처리
-        if (portOneId.startsWith("PAY-SUB-")) {
-            try {
-                BillingHistory billingHistory = billingHistoryRepository.findByPortOneId(portOneId)
-                        .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PAYMENT));
-
-                if (billingHistory.getStatus() != BillingStatus.COMPLETED) {
-                    if ("PAID".equals(request.getStatus())) {
-                        log.info("웹훅 구독 결제 성공. portOneId: {}", portOneId);
-                        billingHistory.complete();
-                        billingHistory.getSubscription().renewSubscription();
-                    } else {
-                        log.info("웹훅 구독 결제 실패. portOneId: {}", portOneId);
-                        billingHistory.fail("웹훅 수신 - 결제 실패 (" + request.getStatus() + ")");
-                        billingHistory.getSubscription().expireSubscription();
-                    }
-                }
-
-                webhook.complete();
-            } catch (Exception e) {
-                log.error("구독 웹훅 처리 중 오류 발생", e);
-                throw e;
-            }
-            return;
-        }
 
         try {
             if ("PAID".equals(request.getStatus())) {
