@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class Subscription extends Base {
 
+    // 체험기간 정하기
+    private static final int DEFAULT_TRIAL_PERIOD_DAYS = 7;
+
     @Id
     @Column(name = "subscription_id")
     private String subscriptionId;
@@ -62,12 +65,10 @@ public class Subscription extends Base {
 
         LocalDateTime now = LocalDateTime.now();
         
-        // 체험 기간 30일 적용
-        int trialPeriodDays = 30;
-
-        if (trialPeriodDays > 0) {
+        // 체험 기간 적용
+        if (DEFAULT_TRIAL_PERIOD_DAYS > 0) {
             subscription.status = SubscriptionStatus.TRIALING;
-            subscription.trialEnd = now.plusDays(trialPeriodDays);
+            subscription.trialEnd = now.plusDays(DEFAULT_TRIAL_PERIOD_DAYS);
             subscription.currentPeriodEnd = subscription.trialEnd;
         } else {
             subscription.status = SubscriptionStatus.ACTIVE;

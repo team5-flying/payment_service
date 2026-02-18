@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class SubscriptionService {
     private final PlanRepository planRepository;
     private final BillingHistoryRepository billingHistoryRepository;
     private final PortOneService portOneService;
+    private final TransactionTemplate transactionTemplate;
 
     @Transactional
     public CreateSubscriptionResponse createSubscription(CreateSubscriptionRequest request, Member member) {
@@ -73,16 +75,45 @@ public class SubscriptionService {
         return SubscriptionResponse.from(subscription);
     }
 
-    @Transactional
     public CreateBillingResponse createBilling(String subscriptionId, CreateBillingRequest request) {
-        Subscription subscription = subscriptionRepository.findById(subscriptionId)
-                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
+        // 구독 정보 조회
+        Subscription subscription = getSubscriptionEntity(subscriptionId);
 
-        // 결제 ID 및 빌링 ID 생성
+        // 결제 ID 생성
         String billingId = "BILL-" + UUID.randomUUID().toString().substring(0,8);
         String portOneId = "PAY-SUB-" + UUID.randomUUID().toString().substring(0,12);
 
-        // 청구 내역 생성
+        // 청구 내역 생성 및 저장
+        BillingHistory billingHistory = transactionTemplate.execute(status ->
+                saveBillingHistory(billingId, subscription, portOneId, request)
+        );
+
+        try {
+            // 포트원 빌링키 결제 요청
+            String orderName = subscription.getPlan().getName() + " 정기 결제";
+            portOneService.payWithBillingKey(portOneId, subscription.getPaymentMethod().getBillingKey(), orderName, subscription.getAmount());
+
+            // 성공 처리
+            transactionTemplate.executeWithoutResult(status ->
+                    completeBilling(billingHistory, subscription)
+            );
+
+        } catch (Exception e) {
+            // 실패 처리
+            transactionTemplate.executeWithoutResult(status ->
+                    failBilling(billingHistory, subscription, e.getMessage())
+            );
+        }
+
+        return CreateBillingResponse.from(billingHistory);
+    }
+
+    public Subscription getSubscriptionEntity(String subscriptionId) {
+        return subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_SUBSCRIPTION));
+    }
+
+    private BillingHistory saveBillingHistory(String billingId, Subscription subscription, String portOneId, CreateBillingRequest request) {
         BillingHistory billingHistory = BillingHistory.create(
                 billingId,
                 subscription,
@@ -91,25 +122,17 @@ public class SubscriptionService {
                 request.getPeriodStart(),
                 request.getPeriodEnd()
         );
+        return billingHistoryRepository.save(billingHistory);
+    }
 
-        try {
-            // 포트원 빌링키 결제 요청
-            String orderName = subscription.getPlan().getName() + " 정기 결제";
-            portOneService.payWithBillingKey(portOneId, subscription.getPaymentMethod().getBillingKey(), orderName, subscription.getAmount());
+    private void completeBilling(BillingHistory billingHistory, Subscription subscription) {
+        billingHistory.complete();
+        subscription.renewSubscription();
+    }
 
-            billingHistory.complete();
-
-            // 다음 결제일 갱신
-            subscription.renewSubscription();
-        } catch (Exception e) {
-            billingHistory.fail(e.getMessage());
-
-            // 결제 실패 시 구독 상태 변경
-            subscription.expireSubscription();
-        }
-
-        billingHistoryRepository.save(billingHistory);
-        return CreateBillingResponse.from(billingHistory);
+    private void failBilling(BillingHistory billingHistory, Subscription subscription, String message) {
+        billingHistory.fail(message);
+        subscription.expireSubscription();
     }
 
     @Transactional
