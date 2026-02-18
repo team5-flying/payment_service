@@ -28,13 +28,13 @@ public class PortOneService {
     @Value("${portone.api.secret}")
     private String apiSecret;
 
-    @Value("${portOne.stor.id}")
+    @Value("${portone.stor.id}")
     private String storeId;
 
-    @Value("${portOne.channel.kg-inicis}")
+    @Value("${portone.channel.kg-inicis}")
     private String kgChannelKey;
 
-    @Value("${portOne.channel.toss}")
+    @Value("${portone.channel.toss}")
     private String tossChannelKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
