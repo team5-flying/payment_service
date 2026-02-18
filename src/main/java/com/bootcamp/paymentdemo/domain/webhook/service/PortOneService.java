@@ -28,13 +28,13 @@ public class PortOneService {
     @Value("${portone.api.secret}")
     private String apiSecret;
 
-    @Value("{portOne.stor.id}")
+    @Value("${portOne.stor.id}")
     private String storeId;
 
-    @Value("{portOne.channel.kg-inicis}")
+    @Value("${portOne.channel.kg-inicis}")
     private String kgChannelKey;
 
-    @Value("{portOne.channel.toss}")
+    @Value("${portOne.channel.toss}")
     private String tossChannelKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -129,7 +129,7 @@ public class PortOneService {
     public void validateBillingKey(String billingKey) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "PortOne " + apiSecret);
-        headers.set("Count-Type", "application/json");
+        headers.set("Content-Type", "application/json");
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         String url = String.format("%s/billing-keys/%s", baseUrl, billingKey);
