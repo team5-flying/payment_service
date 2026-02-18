@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,15 @@ public class PortOneService {
 
     @Value("${portone.api.secret}")
     private String apiSecret;
+
+    @Value("${portone.stor.id}")
+    private String storeId;
+
+    @Value("${portone.channel.kg-inicis}")
+    private String kgChannelKey;
+
+    @Value("${portone.channel.toss}")
+    private String tossChannelKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -76,5 +87,59 @@ public class PortOneService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "PortOne " + apiSecret);
         return headers;
+    }
+
+    // 빌링키 결제 요청
+    public void payWithBillingKey(String paymentId, String billingKey, String orderName, Long amount) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "PortOne " + apiSecret);
+        headers.set("Content-Type", "application/json");
+
+        Map<String, Object> amountMap = Map.of("total", amount);
+        Map<String, Object> body = Map.of(
+                "billingKey", billingKey,
+                "orderName", orderName,
+                "amount", amountMap,
+                "currency", "KRW"
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+        String url = String.format("%s/payments/%s/billing-key", baseUrl, paymentId);
+
+        try {
+            log.info("포트원 빌링키 결제 API 호출, payment={}, amount={}", paymentId, amount);
+            restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+            log.info("포트원 빌링키 결제 성공, 결제번호: {}", paymentId);
+        } catch (Exception e) {
+            log.error("포트원 빌링키 결제 실패: {}", e.getMessage());
+            throw new ServiceErrorException(ErrorEnum.ERR_NOT_SUCCESS_PAYMENT);
+        }
+    }
+
+    // 프론트엔드 결제창 연동 시 필요한 설정값 반환
+    public Map<String, String> getPublicConfig() {
+        return Map.of(
+                "storeId", storeId,
+                "kgChannelKey", kgChannelKey,
+                "tossChannelKey", tossChannelKey
+        );
+    }
+
+    // 빌링키 유효성 검증
+    public void validateBillingKey(String billingKey) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "PortOne " + apiSecret);
+        headers.set("Content-Type", "application/json");
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String url = String.format("%s/billing-keys/%s", baseUrl, billingKey);
+
+        try {
+            restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            log.info("빌링키 유효성 검증 성공: {}", billingKey);
+        } catch (Exception e) {
+            log.error("빌링키 유효성 검증 실패: {}", e.getMessage());
+            throw new ServiceErrorException(ErrorEnum.ERR_INVALID_BILLING_KEY);
+        }
     }
 }

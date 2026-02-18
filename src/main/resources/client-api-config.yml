@@ -312,8 +312,8 @@ api:
     # 구독 & 빌링키 (Subscription & Billing Key)
     # ========================================
     list-plans:
-      url:
-      method:
+      url: /api/plans
+      method: GET
       description: 구독 플랜 목록 조회
       response:
         body:
@@ -337,8 +337,8 @@ api:
               description: 결제 주기 (MONTHLY, QUARTERLY, ANNUAL)
 
     create-subscription:
-      url:
-      method:
+      url: /api/subscriptions
+      method: POST
       description: 구독 생성 (빌링키 저장 + 구독 생성을 하나의 트랜잭션으로 처리)
       request:
         fields:
@@ -368,11 +368,11 @@ api:
               usage: 구독 관리 페이지 리다이렉트에 사용
 
     get-subscription:
-      url:
-      method:
+      url: /api/subscriptions/{subscriptionId}
+      method: GET
       description: 구독 조회
       pathParams:
-        - name:
+        - name: subscriptionId
           description: 구독 ID
       response:
         body:
@@ -404,11 +404,11 @@ api:
               description: "현재 이용 기간 종료일 (ISO 8601 형식, 예: 2026-03-01T23:59:59)"
 
     update-subscription:
-      url:
-      method:
+      url: /api/subscriptions/{subscriptionId}
+      method: PATCH
       description: 구독 상태 업데이트 (구독 해지)
       pathParams:
-        - name:
+        - name: subscriptionId
           description: 구독 ID
       request:
         fields:
@@ -436,11 +436,11 @@ api:
               description: 변경된 구독 상태
 
     create-billing:
-      url:
-      method:
+      url: /api/subscriptions/{subscriptionId}/billings
+      method: POST
       description: 즉시 결제 (현재 주기 청구 실행)
       pathParams:
-        - name:
+        - name: subscriptionId
           description: 구독 ID
       request:
         fields:
@@ -476,11 +476,11 @@ api:
               description: "청구 상태 (COMPLETED: 결제 완료, FAILED: 실패)"
 
     list-billing-history:
-      url:
-      method:
+      url: /api/subscriptions/{subscriptionId}/billings
+      method: GET
       description: 청구 내역 조회
       pathParams:
-        - name:
+        - name: subscriptionId
           description: 구독 ID
       response:
         body:
