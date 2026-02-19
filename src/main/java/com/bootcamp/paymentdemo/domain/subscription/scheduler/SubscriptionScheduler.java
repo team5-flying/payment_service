@@ -21,8 +21,7 @@ public class SubscriptionScheduler {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionService subscriptionService;
 
-//    @Scheduled(cron = "0 0 4 * * *") 테스트를 위해 주석처리하고 3분마다 스케줄러 작동
-    @Scheduled(cron = "0 */3 * * * *")
+    @Scheduled(cron = "0 0 4 * * *")
     public void processScheduledBillings() {
         log.info("정기 결제 스케줄러 시작");
         LocalDateTime now = LocalDateTime.now();

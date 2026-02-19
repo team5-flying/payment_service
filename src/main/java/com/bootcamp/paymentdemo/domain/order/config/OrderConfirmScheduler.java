@@ -22,14 +22,9 @@ public class OrderConfirmScheduler {
     // 오전 10시 확정
     @Scheduled(cron = "0 0 10 * * *")
 
-    // 테스트 케이스 (매분 30초)
-    //@Scheduled(cron = "30 * * * * *")
     public void confirmOrderSchedule() {
         // 7일전 데이터부터 조회
         List<Order> orderList = orderRepository.findByStatusAndUpdatedAtBefore(OrderStatus.COMPLETE, LocalDateTime.now().minusDays(7));
-
-        // 테스트 케이스 (30초 전 데이터부터 조회)
-        //List<Order> orderList = orderRepository.findByStatusAndUpdatedAtBefore(OrderStatus.COMPLETE, LocalDateTime.now().minusSeconds(30));
 
         if(orderList.isEmpty()) {
             return;
