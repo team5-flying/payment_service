@@ -28,7 +28,7 @@ public class PortOneService {
     @Value("${portone.api.secret}")
     private String apiSecret;
 
-    @Value("${portone.stor.id}")
+    @Value("${portone.store.id}")
     private String storeId;
 
     @Value("${portone.channel.kg-inicis}")
