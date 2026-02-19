@@ -1,3 +1,148 @@
+# 커머스 결제 시스템 구축 프로젝트
+> 결제 플로우 설계 및 구현
+
+## 프로젝트 개요
+
+### 주제 : 커머스 결제 시스템 구현
+
+### 기간 : 26.02.04 ~ 26.02.20
+
+### 목적 : 
+- 결제, 환불, 포인트, 멤버쉽, 구독의 정합성과 트랜잭션 처리
+- SP Security와 JWT로 보호된 API 인증, 인가 구현
+- 결제, 환불, 포인트, 구독 등 사용자 소유권이 중요한 기능 보호
+- 서버의 카드 결제 흐름 (결제 확정, 취소, 재고 반영 등) 최족 책입자 관리
+- 결제 성공, 실패에 따른 주문 상태 및 상태 관리
+- 사용자의 최초 구독 신청 처리 및 빌링키를 발급받아 안전하게 저장
+- 저장된 빌링키를 사용해 스케쥴러가 정해진 주기에 자동 결제 시도
+
+### 주요 기능 :
+- 회원 (member, point) 
+  - Spring Security 기반으로 JWT 인증 구조 구현
+  - refresh token과 비교해 일치 여부를 검증,불일치 시 토큰 탈취로 판단하여 재발급을 차단
+  - 로그아웃 시 Access Token 의 jti 를 저장하고
+    필터에서 해당 jti 가 존재하면 인증을 차단해 만료된 블랙리스트 데이터는 스케줄러를 통해 주기적으로 정리
+- 주문상품 (order,product) : 
+  - 더미 데이터를 활용해 상품 목록 조회와 주문 생성을 구현
+  - 주문 생성 시, 클라이언트에서 자동 계산이 되는 주문 총액을 서버에서 한 번 더 검증을 진행함으로써 가격의 위조 방지
+  - 주문 번호는 시퀀스 클래스를 생성해 따로 분리해 처리 및 비관적 락을 통해 동시성 방지
+- 결제 (payment) :
+  - 생성된 주문에 대해 결제 진행, 결제 완료, 결제가 완료된 시점에서의 재고 차감 및 포인트 차감
+  - 주문 결제가 완료되면 스케쥴러를 통해 주문 확정 또는 수동 API 호출로 주문 확정
+  - 한정된 재고에 대한 동시 결제 가능성을 생각해, 결제 완료 시점에서 웹훅을 통한 검증 단계를 통해 동시 결제에서는 선착순으로 성공, 후속 순위는 결제 실패 후 환불하도록 제어
+- 웹훅 (webhook) :
+  - 외부 api 호출이 트랜잭션 내에서 이루어지지 않도록 결제 파트에 대한 트랜잭션 전략 생성 구축
+  - 일반 결제의 경우 이벤트 수신이 주 목적이기때문에 External과 Internal로 계층 분리를 하여 트랜잭션을 관리
+  - 구독 결제는 능동적 요청이 주 목적이라 로직 응집도를 위해 Transaction Template로 트랜잭션 범위를 미세 조정
+- 구독 (subscription) :
+  - PortOne의 빌링키 시스템을 활용해 매월 정해진 날짜에 자동으로 결제가 진행
+  - 구독 신청부터 7일간의 무료 체험 기간 이후 정상 과금 전환
+  - 해지 및 만료에 이르는 구독의 전체 생명주기 설계
+
+### 프로젝트 팀 : 5조날다
+- 서하나 : Leader, domain-products, order
+- 정인호 : domain-members, point
+- 김영재 : domain-payments, Full Refactoring
+- 김동진 : domain-webhook, refund, subscriptions
+
+## 프로젝트 구조
+1. ERD
+![ERD_image 2.png](docs/ERD_image%202.png)
+
+2. API 명세서
+
+<링크>
+
+3. 결제 비즈니스 로직 플로우차트
+![image.png](docs/image.png)
+
+4. 구독 비즈니스 로직 플로우차트
+![image2.png](docs/image2.png)
+
+5. 메인 프로젝트 구조
+
+```
+📁 src/
+├── 📁 main/
+│   ├── 📁 java/com/bootcamp/paymentdemo/
+│   │   ├── 📁 common/
+│   │   │   ├── config
+│   │   │   ├── controller
+│   │   │   ├── dto
+│   │   │   ├── entity                # Base LocalDateTime
+│   │   │   ├── exception             # Error
+│   │   │   ├── security              # JWT
+│   │   │   └── Constants.java        # 공통 예외 처리
+│   │   ├── 📁 domain/
+│   │   │   ├── 📁 member
+│   │   │   │   ├── controller
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   ├── scheduler          # Access Token 블랙리스트 스케쥴
+│   │   │   │   └── service
+│   │   │   ├── 📁 order
+│   │   │   │   ├── config
+│   │   │   │   ├── controller
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   └── service 
+│   │   │   ├── 📁 payment
+│   │   │   │   ├── controller
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   ├── service
+│   │   │   │   └── validator           # 모든 결제 관련 검증 컨포넌트
+│   │   │   ├── 📁 plan                 # 구독(subscription) 플랜
+│   │   │   │   ├── controller           
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   └── service
+│   │   │   ├── 📁 point
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   └── service
+│   │   │   ├── 📁 product
+│   │   │   │   ├── controller
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   └── service  
+│   │   │   ├── 📁 refund
+│   │   │   │   ├── controller
+│   │   │   │   └── service
+│   │   │   ├── 📁 subscription
+│   │   │   │   ├── controller
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   ├── scheduler         # 구독 관리 스케쥴러
+│   │   │   │   └── service  
+│   │   │   ├── 📁 webhook
+│   │   │   │   ├── controller          
+│   │   │   │   ├── dto
+│   │   │   │   ├── entity
+│   │   │   │   ├── repository
+│   │   │   │   └── service           # PortOneService, WebhookExternalService, WebhookInternalService
+
+```
+
+6. 기술 스텍
+- JDK 17
+- MySQL
+- SP Boot
+- SP security
+- JWT
+- IDE : IntelliJ
+
+## 설정 가이드
+
+
+
+// TODO 확인 후 삭제 또는 유지
 # 💳 CommerceHub - 결제/구독 UI 템플릿
 
 > 부트캠프용 프론트엔드 UI 템플릿 - Spring Boot + Thymeleaf + PortOne
