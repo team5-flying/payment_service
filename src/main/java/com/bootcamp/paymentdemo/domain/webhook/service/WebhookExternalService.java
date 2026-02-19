@@ -51,13 +51,13 @@ public class WebhookExternalService {
         // 트랜잭션 프로세스 처리
         PaymentResponse paymentResponse = webhookInternalService.webhookInternalProcess(webhookId, request, actualAmount);
 
-        // 웹훅 처리 결과 로깅
-        loggingWebhook(request, paymentResponse);
-
-        // paymentResponse가 null인 경우 (빌링키 발급, 구독 결제 )
+        // paymentResponse가 null인 경우 (빌링키 발급, 구독 결제)
         if (paymentResponse == null) {
             return;
         }
+
+        // 웹훅 처리 결과 로깅 (paymentResponse가 null이 아닐 때만 호출)
+        loggingWebhook(request, paymentResponse);
 
         // 결제 확정 처리 중 실패할 경우 포트원 결제 취소 API 호출
         if(!paymentResponse.getSuccess() && request.getStatus().equals("PAID")) {

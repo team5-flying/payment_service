@@ -9,6 +9,7 @@ import com.bootcamp.paymentdemo.domain.plan.entity.Plan;
 import com.bootcamp.paymentdemo.domain.plan.repository.PlanRepository;
 import com.bootcamp.paymentdemo.domain.subscription.dto.*;
 import com.bootcamp.paymentdemo.domain.subscription.entity.BillingHistory;
+import com.bootcamp.paymentdemo.domain.subscription.entity.BillingStatus;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Subscription;
 import com.bootcamp.paymentdemo.domain.subscription.entity.SubscriptionStatus;
 import com.bootcamp.paymentdemo.domain.subscription.repository.BillingHistoryRepository;
@@ -41,6 +42,11 @@ public class SubscriptionService {
         // 플랜 조회
         Plan plan = planRepository.findById(request.getPlanId())
                 .orElseThrow(() -> new ServiceErrorException(ErrorEnum.ERR_NOT_FOUND_PLAN));
+
+        // 중복 구독 검증
+        if (subscriptionRepository.existsByMemberIdAndPlanIdAndActiveStatus(member.getMemberId(), plan.getPlanId())) {
+            throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_SUBSCRIBED);
+        }
 
         // 빌링키 유효성 검증
         portOneService.validateBillingKey(request.getBillingKey());
@@ -78,6 +84,16 @@ public class SubscriptionService {
     public CreateBillingResponse createBilling(String subscriptionId, CreateBillingRequest request) {
         // 구독 정보 조회
         Subscription subscription = getSubscriptionEntity(subscriptionId);
+
+        // 중복 결제 검증 (이번 주기에 이미 결제된 내역이 있는지 확인)
+        billingHistoryRepository.findTopBySubscription_SubscriptionIdOrderByAttemptDateDesc(subscriptionId)
+                .ifPresent(lastBilling -> {
+                    // 최근 결제 내역의 시작일이 이번 요청의 시작일과 같고, 상태가 완료(COMPLETED)인 경우
+                    if (lastBilling.getPeriodStart().isEqual(request.getPeriodStart())
+                            && lastBilling.getStatus() == BillingStatus.COMPLETED) {
+                        throw new ServiceErrorException(ErrorEnum.ERR_ALREADY_PAID_THIS_PERIOD);
+                    }
+                });
 
         // 결제 ID 생성
         String billingId = "BILL-" + UUID.randomUUID().toString().substring(0,8);

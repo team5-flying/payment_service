@@ -14,4 +14,6 @@ public interface BillingHistoryRepository extends JpaRepository<BillingHistory, 
     List<BillingHistory> findAllBySubscriptionId(@Param("subscriptionId") String subscriptionId);
 
     Optional<BillingHistory> findByPortOneId(String portOneId);
+
+    Optional<BillingHistory> findTopBySubscription_SubscriptionIdOrderByAttemptDateDesc(String subscriptionId);
 }
