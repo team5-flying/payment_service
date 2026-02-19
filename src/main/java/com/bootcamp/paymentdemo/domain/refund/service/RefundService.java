@@ -51,12 +51,8 @@ public class RefundService {
         Order order = payment.getOrder();
         Member member = order.getMember();
 
-        // 상태 변경
-        payment.updateStatus(PaymentStatus.CANCELLED);
-        order.updateStatus(OrderStatus.CANCELLED);
-
-        // 누적 결제 금액 차감
-        if (payment.getPriceSnap() != null) {
+        // 누적 결제 금액 차감 (주문 확정된 건의 경우에만)
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
             member.subtractTotalPriceAmount(order.getFinalAmount());
         }
 
@@ -76,6 +72,10 @@ public class RefundService {
             // 주문 시 소모했던 수량(positive)을 빼기 위해 음수(-) 전달
             product.updateStock(-po.getQuantity());
         }
+
+        // 상태 변경
+        payment.updateStatus(PaymentStatus.CANCELLED);
+        order.updateStatus(OrderStatus.CANCELLED);
 
         return PaymentResponse.register(
                 true

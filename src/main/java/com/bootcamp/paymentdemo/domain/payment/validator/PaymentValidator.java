@@ -33,10 +33,10 @@ public class PaymentValidator {
     // 결제 확정 시 검증
     public void validateForConfirm(Member member, Order order, List<ProductOrder> productOrderList) {
         if (order.getUsedPoints() > 0) {
-            validatePointAtConfirm(member, order.getUsedPoints());
+            validatePoint(member, order.getUsedPoints());
         }
 
-        validateStockAtConfirm(productOrderList);
+        validateStock(productOrderList);
     }
 
     // 포인트 부족 검증
@@ -48,22 +48,6 @@ public class PaymentValidator {
 
     // 재고 부족 검증
     private void validateStock(List<ProductOrder> productOrderList) {
-        for (ProductOrder productOrder : productOrderList) {
-            if (productOrder.getProduct().getStock() < productOrder.getQuantity()) {
-                throw new ServiceErrorException(ERR_NOT_ENOUGH_STOCK);
-            }
-        }
-    }
-
-    // 포인트 부족 검증_확정
-    private void validatePointAtConfirm(Member member, Long requiredPoints) {
-        if (requiredPoints > 0 && member.getPoint() < requiredPoints) {
-            throw new ServiceErrorException(ERR_NOT_ENOUGH_POINT);
-        }
-    }
-
-    // 재고 부족 검증_확정
-    private void validateStockAtConfirm(List<ProductOrder> productOrderList) {
         for (ProductOrder productOrder : productOrderList) {
             Product product = productRepository.findByIdWithLock(productOrder.getProduct().getId())
                     .orElseThrow(() -> new ServiceErrorException(ERR_NOT_FOUND_PRODUCT));
