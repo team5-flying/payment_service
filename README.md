@@ -102,11 +102,11 @@ Payment & Integration
 
 * 결제 비즈니스 로직 플로우차트
    
-![image.png](docs/image.png)
+![image.png](docs/image2.png)
 
 * 구독 비즈니스 로직 플로우차트
    
-![image2.png](docs/image2.png)
+![image2.png](docs/image.png)
 
 * 메인 프로젝트 구조
 ```
